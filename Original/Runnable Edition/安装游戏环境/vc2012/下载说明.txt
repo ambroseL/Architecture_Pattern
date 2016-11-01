@@ -1,0 +1,22 @@
+微软官方 Visual C++ Redistributable for Visual Studio 2012(x86、x64)
+
+使用说明：
+
+Visual C++ Redistributable Package 安装 Visual C++ 库的运行时组件，这些组件是在未安装 Visual Studio 2012 的计算机上运行使用 Visual Studio 2012 开发的应用程序所必需的。这些包将安装 C 运行时 (CRT)、标准 C++、ATL、MFC、C++ AMP 和 OpenMP 库的运行时组件。
+
+系统要求
+
+支持的操作系统： Windows 7 Service Pack 1, Windows 8, Windows Server 2008 R2 SP1, Windows Server 2012, Windows Vista Service Pack 2
+
+ Windows 7 SP1（x86 和 x64）
+ Windows 8（x86 和 x64）
+ Windows Server 2008 R2 SP1 (x64)
+ Windows Server 2008 SP2 (x64)
+ Windows Vista SP2（x86 和 x64）
+ Windows Server 2012 (x64)
+ 硬件要求：
+ 1.6 GHz 或更快的处理器
+ 1 GB RAM（如果在虚拟机上运行，则为 1.5 GB）
+ 10 GB 的可用硬盘空间
+ 5400 RPM 硬盘
+ 以 1024 x 768 或更高显示分辨率运行的支持 DirectX 9 的视频卡

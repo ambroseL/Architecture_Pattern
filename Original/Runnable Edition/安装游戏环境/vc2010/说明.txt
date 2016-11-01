@@ -1,0 +1,6 @@
+Microsoft Visual C++ 2010 Redistributable Package 
+
+使用说明：
+
+软件介绍： Microsoft Visual C++ Redistributable Package (x86) 安装 Visual C++ 库的运行时组件,使用户能够在未安装 Visual C++的计算机上运行使用 Visual C++ 开发的应用程序.
+本程序包为 C 运行时库 (CRT)、标准 C++、ATL、MFC、OpenMP 和 MSDIA 库安装运行时组件.对于支持并行部署模型的库(CRT、SCL、ATL、MFC、OpenMP),这些运行时组件被安装到支持并行程序集的 Windows 操作系统的本机程序集缓存(也称为 WinSxS 文件夹)中.

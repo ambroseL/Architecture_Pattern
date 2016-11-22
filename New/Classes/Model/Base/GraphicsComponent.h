@@ -141,5 +141,6 @@ cocos2d::ParticleMeteor* createParticle(float fScale, float lifeCircle, cocos2d:
 */
 cocos2d::ParticleMeteor* copyParticle(cocos2d::ParticleMeteor* particle);
 
+
 #endif
 

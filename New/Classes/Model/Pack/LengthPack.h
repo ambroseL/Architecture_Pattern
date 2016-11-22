@@ -1,5 +1,5 @@
-#ifndef _SpeedPack_H_
-#define _SpeedPack_H_
+#ifndef _LengthPack_H_
+#define _LengthPack_H_
 
 #include "PackObj.h"
 

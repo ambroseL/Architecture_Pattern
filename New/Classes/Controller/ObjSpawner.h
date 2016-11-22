@@ -10,6 +10,7 @@ class ObjSpawner
 public:
 	ObjSpawner(EntityObj* prototype);
 	EntityObj* spawnEntity();
+	void setPrototype(EntityObj* prototype);
 	~ObjSpawner();
 };
 #endif

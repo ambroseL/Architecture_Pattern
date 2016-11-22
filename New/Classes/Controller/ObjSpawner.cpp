@@ -14,3 +14,9 @@ EntityObj* ObjSpawner::spawnEntity()
 {
 	return prototype->Clone();
 }
+
+void ObjSpawner::setPrototype(EntityObj* prototype)
+{
+	this->prototype = prototype;
+}
+

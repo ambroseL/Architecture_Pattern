@@ -53,14 +53,14 @@ const float EntityObj::getHeight()
 void EntityObj::setWidth(float fWidth)									
 {
 	this->graphicsComponent->setWidth(fWidth);
-	this->graphicsComponent->setSize(fWidth, this->getGraphicsComponent()->getSprite()->getContentSize().height);
+	this->physicsComponent->setSize(fWidth, this->getGraphicsComponent()->getSprite()->getContentSize().height);
 
 }
 
 void EntityObj::setHeight(float fHeight)								
 {
 	this->graphicsComponent->setHeight(fHeight);
-	this->graphicsComponent->setSize(this->getGraphicsComponent()->getSprite()->getContentSize().width, fHeight);
+	this->physicsComponent->setSize(this->getGraphicsComponent()->getSprite()->getContentSize().width, fHeight);
 }
 
 const b2Vec2 EntityObj::getSpeed()
@@ -73,12 +73,12 @@ void EntityObj::setSpeed(b2Vec2 fSpeed)
 	this->physicsComponent->setSpeed(fSpeed);
 }
 
-const cocos2d::ParticleMeteor* EntityObj::getParticle()
+cocos2d::ParticleSystem* EntityObj::getParticle()
 {
 	return graphicsComponent->getParticle();
 }
 
-void EntityObj::setParticle(cocos2d::ParticleMeteor* cps)
+void EntityObj::setParticle(cocos2d::ParticleSystem* cps)
 {
 	graphicsComponent->setParticel(cps);
 }
@@ -104,3 +104,19 @@ void EntityObj::setID(std::string* id)
 	this->id = id;
 }
 
+b2Vec2 EntityObj::getPosition()
+{
+	return physicsComponent->getPosition();
+}
+
+
+void EntityObj::setPosition(b2Vec2 pos)
+{
+	physicsComponent->setPosition(pos);
+}
+
+void EntityObj::setTexture(cocos2d::Texture2D* texture)
+{
+	if (texture != NULL)
+		graphicsComponent->setTexture(texture);
+}

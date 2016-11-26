@@ -75,6 +75,33 @@ b2Body* PhysicsComponent::getBody()
 	return this->body;
 }
 
+
+void PhysicsComponent::setPosition(b2Vec2 pos)
+{
+	body->SetTransform(pos, body->GetAngle());
+}
+
+
+b2Vec2 PhysicsComponent::getPosition()
+{
+	return body->GetPosition();
+}
+
+void PhysicsComponent::setFilterData(b2Filter filter)
+{
+	body->GetFixtureList()->SetFilterData(filter);
+}
+
+float32 PhysicsComponent::getMass() const
+{
+	return body->GetMass();
+}
+
+b2Vec2 PhysicsComponent::getWorldCenter() const
+{
+	return body->GetWorldCenter();
+}
+
 //==============辅助函数==============
 
 b2Body* createBody(int type, int shape, std::string* id, b2World* world, float* data, float density, float friction, 
@@ -134,5 +161,36 @@ b2Body* copyBody(b2Body* phyBody)
 		body->SetLinearDamping(-0.0f);                                 //无阻尼
 		fixture++;
 	}
+	return body;
+}
+
+b2Body* createWallBody(int index,  std::string* id, b2World* world, float* data, float density, float friction, float restitution)
+{
+	//创建线性刚体
+	b2BodyDef bodyDef;	//创建刚体描述
+	float positionX = (data[0] + data[2]) / 2;//计算刚体中心位置的X坐标
+	float positionY = (data[1] + data[3]) / 2;//计算刚体中心位置的Y坐标
+	bodyDef.position.Set(positionX / pixToMeter, positionY / pixToMeter);//设置刚体位置
+	b2EdgeShape shape;//创建线形物体类对象
+	shape.Set(b2Vec2((data[0] - positionX) / pixToMeter, (data[1] - positionY) / pixToMeter), b2Vec2((data[2] - positionX) / pixToMeter, (data[3] - positionY) / pixToMeter));//设置位置
+	b2FixtureDef fixtureDef;//创建刚体物理描述
+	fixtureDef.shape = &shape;//设置形状
+	fixtureDef.density = density;//设置密度
+	fixtureDef.friction = friction;//设置摩擦系数
+	fixtureDef.restitution = restitution;//设置恢复系数
+	if (index == 1)
+	{
+		fixtureDef.filter.categoryBits = 0;
+	}
+	else
+	{
+		fixtureDef.filter.groupIndex = 1;
+		fixtureDef.filter.categoryBits = 2;
+		fixtureDef.filter.maskBits = 4;
+	}
+	b2Body* body = world->CreateBody(&bodyDef);//创建刚体对象
+	body->SetUserData(id);//在刚体中记录对应的包装对象指针
+	body->CreateFixture(&fixtureDef);//将物理描述与刚体结合
+	body->SetLinearDamping(0);
 	return body;
 }

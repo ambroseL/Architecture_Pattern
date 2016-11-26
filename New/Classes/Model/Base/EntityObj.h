@@ -118,13 +118,13 @@ public:
 	*由图像部件实现
 	*@param cps 待设置的粒子
 	*/
-	void setParticle(cocos2d::ParticleMeteor* cps);
+	void setParticle(cocos2d::ParticleSystem* cps);
 
 	/**
 	*获取物体粒子
 	*由图像部件实现
 	*/
-	const cocos2d::ParticleMeteor* getParticle();
+	cocos2d::ParticleSystem* getParticle();
 
 	/**
 	*获取物体ID
@@ -135,6 +135,23 @@ public:
 	*设置物体ID
 	*/
 	void setID(std::string* id);
+
+	/**
+	*设置物体位置
+	*/
+	void setPosition(b2Vec2 pos);
+
+	/**
+	*获取物体位置
+	*/
+	b2Vec2 getPosition();
+
+
+	/**
+	*设置贴图
+	*@param texture 待设置的贴图
+	*/
+	void setTexture(cocos2d::CCTexture2D* texture);
 
 protected:
 

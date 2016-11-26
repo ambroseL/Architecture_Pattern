@@ -2,6 +2,7 @@
 #define _GraphicsComponent_H_
 
 #include "cocos2d.h"
+#include "Box2D/Common/b2Math.h"
 
 
 /**
@@ -19,7 +20,7 @@
 class GraphicsComponent 
 {
 	cocos2d::Sprite* dSp;/* 精灵 */
-	cocos2d::ParticleMeteor* cps;/* 粒子 */
+	cocos2d::ParticleSystem* cps;/* 粒子 */
 
 public:
 	// 类的生命周期控制函数，包括构造和析构	
@@ -35,7 +36,7 @@ public:
 	*@param dSp 精灵类，cocos自带
 	*@param cps 粒子类，cocos自带
 	*/
-	GraphicsComponent(cocos2d::Sprite* dSp, cocos2d::ParticleMeteor* cps = nullptr);
+	GraphicsComponent(cocos2d::Sprite* dSp, cocos2d::ParticleSystem* cps = nullptr);
 
 	/**
 	*拷贝构造函数
@@ -96,13 +97,32 @@ public:
 	/**
 	*获取粒子
 	*/
-	const cocos2d::ParticleMeteor* getParticle();
+	cocos2d::ParticleSystem* getParticle();
 
 	/**
 	*设置粒子
+	*@param pParticle 待设置的粒子
 	*/
-	void setParticel(cocos2d::ParticleMeteor* pParticle);
+	void setParticel(cocos2d::ParticleSystem* pParticle);
+
+
+	/**
+	*设置贴图
+	*@param texture 待设置的贴图
+	*/
+	void setTexture(cocos2d::Texture2D* texture);
 	
+	/**
+	*设置物体位置
+	*@pos 待设置的物体位置
+	*/
+	void setPosition(cocos2d::Vec2 pos);
+
+	/**
+	*获取物体位置
+	*/
+	cocos2d::Vec2 getPosition();
+
 };
 
 //辅助函数
@@ -115,7 +135,7 @@ public:
 *@param pic 物体图像所在路径
 *
 */
-cocos2d::Sprite* createSprite(int shape, cocos2d::Layer *layer,float* data, std::string pic);
+cocos2d::Sprite* createSprite(int shape, float* data, std::string pic);
 
 /**
 *拷贝精灵
@@ -129,18 +149,24 @@ cocos2d::Sprite* copySprite(cocos2d::Sprite* sprite);
 *创建粒子
 *@param fScale 粒子缩放比
 *@param lifeCircle 生命周期
-*@param layer 粒子所在图像层
-*@param data 长宽等构建数据
+*@param pos 粒子位置
 */
-cocos2d::ParticleMeteor* createParticle(float fScale, float lifeCircle, cocos2d::Layer *layer, float* data);
+cocos2d::ParticleSystem* createParticle(float fScale, float lifeCircle, cocos2d::Vec2 pos);
 
 /**
 *拷贝粒子
 *@param particle 粒子类，cocos自带
 *
 */
-cocos2d::ParticleMeteor* copyParticle(cocos2d::ParticleMeteor* particle);
+cocos2d::ParticleSystem* copyParticle(cocos2d::ParticleSystem* particle);
 
+/**
+*创建墙精灵
+*@param data 长宽等构建数据
+*@param pic 物体图像所在路径
+*
+*/
+cocos2d::Sprite* createWallSprite(float* data, std::string pic);
 
 #endif
 

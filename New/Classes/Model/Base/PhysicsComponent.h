@@ -83,6 +83,32 @@ public:
 	*/
 	void setSpeed(b2Vec2 fSpeed);
 
+	/**
+	*设置物体位置
+	*@pos 待设置的物体位置
+	*/
+	void setPosition(b2Vec2 pos);
+
+	/**
+	*获取物体位置
+	*/
+	b2Vec2 getPosition();
+
+	/**
+	*设置碰撞过滤器
+	*@filter 待设置的过滤器
+	*/
+	void setFilterData(b2Filter filter);
+
+	/**
+	*获取物体质量
+	*/
+	float32 getMass() const;
+
+	/**
+	*获取球体所在物理世界的中心坐标
+	*/
+	b2Vec2 getWorldCenter() const;
 };
 
 
@@ -110,3 +136,16 @@ b2Body* createBody(int type, int shape, std::string* id, b2World* world, float* 
 */
 b2Body* copyBody(b2Body* phyBody);
 #endif
+
+/**
+*创建墙刚体
+*@param type 刚体类型
+*@param shape 形状
+*@param id ID
+*@param world 所在物理世界
+*@param data 宽度高度等构造数据
+*@param density 密度
+*@param friction 摩擦系数
+*@param restitution 恢复系数
+*/
+b2Body* createWallBody(int index, std::string* id, b2World* world, float* data, float density, float friction, float restitution);

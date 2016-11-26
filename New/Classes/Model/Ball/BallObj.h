@@ -35,6 +35,8 @@ class BallObj :public EntityObj
 
 	b2Vec2 sSpeed;				/* 球体初速度 */
 
+	b2Vec2 speed;				/* 球体当前匀速度 */
+
 public:
 
 	// 类的生命周期控制函数，包括构造和析构	
@@ -103,6 +105,17 @@ public:
 	*@param fRadius 待设置的球体半径数值
 	*/
 	void setRadius(float fRadius);
+
+	/**
+	*获取球体的实时匀速度
+	*/
+	b2Vec2 getRealSpeed();
+
+	/**
+	*设置球体的实时匀速度
+	*@param speed 待设置的球体匀速度
+	*/
+	void setRealSpeed(b2Vec2 speed);
 
 	//类的状态设置及查询
 	

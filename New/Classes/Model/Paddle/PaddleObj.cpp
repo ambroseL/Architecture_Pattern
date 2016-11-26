@@ -15,8 +15,9 @@ EntityObj(physicsComponent, graphicsComponent, id), isSticky(bSticky), isImage(b
 	cocos2d::Size size = dSp->getContentSize();                        //获取精灵尺寸
 	float scaleX = dSp->getScaleX();								   //获取横向缩放比
 	float scaleY = dSp->getScaleY();								   //获取纵向缩放比
-	this->sWidth = size.width * scaleX / 2;						   //设置初始半长度
+	this->sWidth = size.width * scaleX / 2;							   //设置初始半长度
 	this->sHeight = size.height * scaleY / 2;						   //设置初始半高度
+	this->getPhysicsComponent()->getBody()->SetFixedRotation(true);	   //设置不可翻转
 }// PaddleObj
 
 

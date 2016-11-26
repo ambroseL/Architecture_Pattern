@@ -9,7 +9,7 @@ EntityObj(),attack(1),speedState(Normal),isPermeat(false),sSpeed(b2Vec2(0, 0))
 }// BallObj
 
 BallObj::BallObj(PhysicsComponent* physicsComponent, GraphicsComponent* graphicsComponent, std::string* id, int attack, b2Vec2 bSpeed, SpeedState speedState, bool isPermeat):
-EntityObj(physicsComponent, graphicsComponent, id),attack(attack),sSpeed(bSpeed),speedState(speedState),isPermeat(isPermeat)
+EntityObj(physicsComponent, graphicsComponent, id),attack(attack),sSpeed(bSpeed),speed(bSpeed),speedState(speedState),isPermeat(isPermeat)
 {	
 }// BallObj
 
@@ -60,6 +60,16 @@ void BallObj::setRadius(float fRadius)
 {
 	this->setHeight(fRadius);
 	this->setWidth(fRadius);
+}
+
+b2Vec2 BallObj::getRealSpeed()
+{
+	return this->speed;
+}
+
+void BallObj::setRealSpeed(b2Vec2 speed)
+{
+	this->speed = speed;
 }
 
 //==============×´Ì¬²éÑ¯   =====================

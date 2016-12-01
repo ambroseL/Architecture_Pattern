@@ -4,7 +4,11 @@
 #include "cocos2d.h"
 #include "BallObj.h"
 #include "PaddleObj.h"
+#include "MyJoints.h"
+#include "WallObj.h"
+//#include "GameLayer.h"
 
+using namespace cocos2d;
 /**
 * 物体管理类
 *
@@ -17,7 +21,9 @@
 * @seesomething
 */
 
-class ObjManager:public cocos2d::Node
+extern class GameLayer;
+
+class ObjManager
 {
 
 
@@ -37,6 +43,10 @@ public:
 	*/
 	~ObjManager();
 
+	/**
+	*初始化函数
+	*/
+	void init();
 
 	//类操作
 
@@ -46,8 +56,17 @@ public:
 	*@parameter world 关卡所在物理世界
 	*@parameter layer 关卡所在图层
 	*/
-	void createObj(int level, b2World* bWorld, cocos2d::Layer* Llayer);
+	void createObj(int level, b2World* bWorld, GameLayer* Llayer);
 	
+
+	/**
+	*创建鼠标关节
+	*@target 初始化目标锚点（ poB物体的刚体的锚点）
+	*@frequencyHz 响应的速度5.0f
+	*@dampingRatio 阻尼	0-10.7f
+	*/
+	MyMouseJoint* createMouseJoint( b2Vec2 target, float32 frequencyHz, float32 dampingRatio);
+
 	/**
 	*将物体加入待删除物体列表
 	*@parameter id 待删除物体id
@@ -58,7 +77,7 @@ public:
 	*将粒子加入待删除粒子列表
 	*@parameter cps 待删除粒子指针
 	*/
-	void addParticle2Delete(cocos2d::ParticleSystem* cps);
+	void addParticle2Delete(ParticleSystem* cps);
 
 	/**
 	*删除待删除列表中的物体
@@ -97,7 +116,7 @@ public:
 	*@sid 包裹类型
 	*@ids 包裹ID
 	*/
-	void judgePack(char sid, std::string* ids);
+	void judgePack(char sid);
 
 	//砖块效果函数
 	
@@ -206,42 +225,42 @@ public:
 	/**
 	*处理待还原的增长包裹列表
 	*/
-	void clearLengthenPackResetList(float delta);
+	void clearLengthenPackResetList();
 
 	/**
 	*处理待还原的缩短包裹列表
 	*/
-	void clearShortenPackResetList(float delta);
+	void clearShortenPackResetList();
 
 	/**
 	*处理待还原的颠倒包裹列表
 	*/
-	void clearReversalPackResetList(float delta);
+	void clearReversalPackResetList();
 
 	/**
 	*处理待还原的镜像包裹列表
 	*/
-	void clearImagePackResetList(float delta);
+	void clearImagePackResetList();
 
 	/**
 	*处理待还原的加速包裹列表
 	*/
-	void clearAcceleratePackResetList(float delta);
+	void clearAcceleratePackResetList();
 
 	/**
 	*处理待还原的减速包裹列表
 	*/
-	void clearDeacceleratePackResetList(float delta);
+	void clearDeacceleratePackResetList();
 
 	/**
 	*处理待还原的升级包裹列表
 	*/
-	void clearUpgradePackResetList(float delta);
+	void clearUpgradePackResetList();
 
 	/**
 	*处理待还原的穿透包裹列表
 	*/
-	void clearPermeatPackResetList(float delta);
+	void clearPermeatPackResetList();
 
 	/**
 	*获取当前level的砖块数
@@ -259,6 +278,28 @@ public:
 	*/
 	void applyForce2Paddle(b2Vec2 force);
 
+	/**
+	*设置挡板线速度阻尼
+	*@linearDamping 模拟线速度阻尼
+	*/
+	void setPaddleLinearDamping(float32 linearDamping);
+
+	/**
+	*发射球体
+	*/
+	void shootBall();
+
+	/**
+	*设置挡板速度
+	*@Speed 待设置的挡板速度
+	*/
+	void setPaddleVelocity(b2Vec2 Speed);
+
+	/**
+	*获取挡板的精灵
+	*/
+	Sprite* getPaddleSprite() const;
+
 private:
 
 	BallObj* ball;											    /* 球体 */
@@ -267,7 +308,11 @@ private:
 
 	PaddleObj* imgPaddle;									    /* 镜像挡板 */
 
-	std::vector<cocos2d::ParticleSystem*> deleteParticleList;   /* 待删除的粒子列表 */
+	WallObj* ground;											/* 地面 */
+
+	//MyMouseJoint* mouseJoint;									/* 鼠标关节*/
+
+	std::vector<ParticleSystem*> deleteParticleList;   /* 待删除的粒子列表 */
 
 	std::vector<std::string> deleteObjList;					    /* 待删除的物体ID列表 */
 
@@ -302,8 +347,9 @@ private:
 	int stickyPackIndex;									/* 粘黏包裹ID */
 	int transmitBrickIndex;									/* 传送砖块ID */
 	int ballObjIndex;										/* 球体ID */
+	int mouseJointIndex;									/* 鼠标关节ID */
 
-	cocos2d::Layer* layer;									/* 物体所在层 */
+	GameLayer* layer;											/* 物体所在层 */
 	b2World* world;											/* 物体所在物理世界 */
 };
 #endif

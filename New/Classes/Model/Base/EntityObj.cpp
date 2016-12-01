@@ -73,12 +73,12 @@ void EntityObj::setSpeed(b2Vec2 fSpeed)
 	this->physicsComponent->setSpeed(fSpeed);
 }
 
-cocos2d::ParticleSystem* EntityObj::getParticle()
+ParticleSystem* EntityObj::getParticle()
 {
 	return graphicsComponent->getParticle();
 }
 
-void EntityObj::setParticle(cocos2d::ParticleSystem* cps)
+void EntityObj::setParticle(ParticleSystem* cps)
 {
 	graphicsComponent->setParticel(cps);
 }
@@ -109,13 +109,13 @@ b2Vec2 EntityObj::getPosition()
 	return physicsComponent->getPosition();
 }
 
-
 void EntityObj::setPosition(b2Vec2 pos)
 {
 	physicsComponent->setPosition(pos);
+	graphicsComponent->setPosition(Point(pos.x,pos.y));
 }
 
-void EntityObj::setTexture(cocos2d::Texture2D* texture)
+void EntityObj::setTexture(Texture2D* texture)
 {
 	if (texture != NULL)
 		graphicsComponent->setTexture(texture);

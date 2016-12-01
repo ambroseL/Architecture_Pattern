@@ -4,12 +4,12 @@
 
 //================= 构造函数 ====================
 BallObj::BallObj():
-EntityObj(),attack(1),speedState(Normal),isPermeat(false),sSpeed(b2Vec2(0, 0))
+EntityObj(),attack(1),speedState(Normal),isPermeat(false), initialSpeed(b2Vec2(0, 0)),constantSpeed(b2Vec2(0, 0))
 {
 }// BallObj
 
 BallObj::BallObj(PhysicsComponent* physicsComponent, GraphicsComponent* graphicsComponent, std::string* id, int attack, b2Vec2 bSpeed, SpeedState speedState, bool isPermeat):
-EntityObj(physicsComponent, graphicsComponent, id),attack(attack),sSpeed(bSpeed),speed(bSpeed),speedState(speedState),isPermeat(isPermeat)
+EntityObj(physicsComponent, graphicsComponent, id),attack(attack),initialSpeed(bSpeed),constantSpeed(bSpeed),speedState(speedState),isPermeat(isPermeat)
 {	
 }// BallObj
 
@@ -20,7 +20,7 @@ BallObj::~BallObj()
 
 EntityObj* BallObj::Clone()								
 {
-	return new BallObj(this->getPhysicsComponent()->Clone(), this->getGraphicsComponent()->Clone(), new std::string(this->getID()->c_str()), this->attack, this->sSpeed, this->speedState, this->isPermeat);
+	return new BallObj(this->getPhysicsComponent()->Clone(), this->getGraphicsComponent()->Clone(), new std::string(this->getID()->c_str()), this->attack, this->initialSpeed, this->speedState, this->isPermeat);
 }
 
 
@@ -35,9 +35,14 @@ void BallObj::Reset()
 
 const b2Vec2 BallObj::getInitialSpeed()
 {
-	SpeedState m = Slow;
-	return sSpeed;
+	return this->initialSpeed;
 }
+
+void BallObj::setInitialSpeed(b2Vec2 initialSpeed)
+{
+	this->initialSpeed = initialSpeed;
+}
+
 
 const int BallObj::getAttack()
 {
@@ -62,14 +67,14 @@ void BallObj::setRadius(float fRadius)
 	this->setWidth(fRadius);
 }
 
-b2Vec2 BallObj::getRealSpeed()
+b2Vec2 BallObj::getConstantSpeed()
 {
-	return this->speed;
+	return this->constantSpeed;
 }
 
-void BallObj::setRealSpeed(b2Vec2 speed)
+void BallObj::setConstantSpeed(b2Vec2 speed)
 {
-	this->speed = speed;
+	this->constantSpeed = speed;
 }
 
 //==============状态查询   =====================

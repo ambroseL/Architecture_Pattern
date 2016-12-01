@@ -33,9 +33,9 @@ class BallObj :public EntityObj
 
 	bool isPermeat;				/* 球体是否处于穿透状态 */
 
-	b2Vec2 sSpeed;				/* 球体初速度 */
+	b2Vec2 initialSpeed;				/* 球体初速度 */
 
-	b2Vec2 speed;				/* 球体当前匀速度 */
+	b2Vec2 constantSpeed;				/* 球体当前匀速度 */
 
 public:
 
@@ -85,6 +85,11 @@ public:
 	const b2Vec2 getInitialSpeed();
 
 	/**
+	*设置球体的初速度
+	*/
+	void setInitialSpeed(b2Vec2 initialSpeed);
+
+	/**
 	*获取球体的攻击力
 	*/
 	const int getAttack();
@@ -109,13 +114,13 @@ public:
 	/**
 	*获取球体的实时匀速度
 	*/
-	b2Vec2 getRealSpeed();
+	b2Vec2 getConstantSpeed();
 
 	/**
 	*设置球体的实时匀速度
 	*@param speed 待设置的球体匀速度
 	*/
-	void setRealSpeed(b2Vec2 speed);
+	void setConstantSpeed(b2Vec2 speed);
 
 	//类的状态设置及查询
 	

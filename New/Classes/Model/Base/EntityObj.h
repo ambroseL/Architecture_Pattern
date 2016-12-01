@@ -4,7 +4,7 @@
 #include "Box2D/Box2D.h"
 #include "PhysicsComponent.h"
 #include "GraphicsComponent.h"
-
+using namespace cocos2d;
 /**
 * 实体物件类
 *
@@ -118,13 +118,13 @@ public:
 	*由图像部件实现
 	*@param cps 待设置的粒子
 	*/
-	void setParticle(cocos2d::ParticleSystem* cps);
+	void setParticle(ParticleSystem* cps);
 
 	/**
 	*获取物体粒子
 	*由图像部件实现
 	*/
-	cocos2d::ParticleSystem* getParticle();
+	ParticleSystem* getParticle();
 
 	/**
 	*获取物体ID
@@ -151,7 +151,7 @@ public:
 	*设置贴图
 	*@param texture 待设置的贴图
 	*/
-	void setTexture(cocos2d::CCTexture2D* texture);
+	void setTexture(CCTexture2D* texture);
 
 protected:
 

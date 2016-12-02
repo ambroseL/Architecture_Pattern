@@ -21,7 +21,8 @@
 #include "DeacceleratePack.h"
 #include "ShortenBrick.h"
 #include "AccelerateBrick.h"
-
+#include "GameLayer.h"
+#include "globalObj.h"
 
 struct pos
 {
@@ -31,6 +32,15 @@ struct pos
 };
 
 ObjManager::ObjManager():ball(nullptr),paddle(nullptr),imgPaddle(nullptr),layer(nullptr),world(nullptr)
+{
+}
+
+ObjManager::~ObjManager()
+{
+}
+
+
+void ObjManager::init()
 {
 	//清空待删除和待还原列表
 	resetLengthenPackList.clear();
@@ -43,10 +53,10 @@ ObjManager::ObjManager():ball(nullptr),paddle(nullptr),imgPaddle(nullptr),layer(
 	resetUpgradePackList.clear();
 	deleteObjList.clear();
 	deleteParticleList.clear();
-	
+
 	//清空物体ID与物体间的映射
 	objMap.clear();
-	
+
 	objTexturePathMap.clear();
 	//建立贴图路径与类名间的映射
 	objTexturePathMap['C'] = "Image/Common_Brick";
@@ -96,11 +106,7 @@ ObjManager::ObjManager():ball(nullptr),paddle(nullptr),imgPaddle(nullptr),layer(
 	brickCount = 0;
 }
 
-ObjManager::~ObjManager()
-{
-}
-
-void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
+void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 {
 	world = bWorld;
 	layer = Llayer;
@@ -113,6 +119,7 @@ void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
 	EntityObj* po;
 	GraphicsComponent* graphicsComponent;
 	PhysicsComponent* physicsComponent;
+	WallObj* wallPrototype;
 	b2Body* body;
 	Sprite* sprite;
 	float* data;
@@ -126,7 +133,7 @@ void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
 	layer->addChild(sprite);
 	graphicsComponent = new GraphicsComponent(sprite);
 	physicsComponent = new PhysicsComponent(body);
-	WallObj* ground = new WallObj(physicsComponent, graphicsComponent, ids);
+	ground = new WallObj(physicsComponent, graphicsComponent, ids);
 	objMap[*ids] = ground;
 
 	//创建上面刚体
@@ -137,8 +144,8 @@ void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
 	layer->addChild(sprite);
 	graphicsComponent = new GraphicsComponent(sprite);
 	physicsComponent = new PhysicsComponent(body);
-	ground = new WallObj(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = ground;
+	wallPrototype = new WallObj(physicsComponent, graphicsComponent, ids);
+	objMap[*ids] = wallPrototype;
 
 	//创建左墙面刚体
 	data = new float[4]{ -512, -384, -512, 384 };
@@ -148,8 +155,8 @@ void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
 	layer->addChild(sprite);
 	graphicsComponent = new GraphicsComponent(sprite);
 	physicsComponent = new PhysicsComponent(body);
-	ground = new WallObj(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = ground;
+	wallPrototype = new WallObj(physicsComponent, graphicsComponent, ids);
+	objMap[*ids] = wallPrototype;
 
 
 	//创建右墙面刚体
@@ -160,8 +167,8 @@ void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
 	layer->addChild(sprite);
 	graphicsComponent = new GraphicsComponent(sprite);
 	physicsComponent = new PhysicsComponent(body);
-	ground = new WallObj(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = ground;
+	wallPrototype = new WallObj(physicsComponent, graphicsComponent, ids);
+	objMap[*ids] = wallPrototype;
 	
 
 	//创建挡板
@@ -197,18 +204,19 @@ void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
 	ball = new BallObj(physicsComponent, graphicsComponent, ids);
 	objMap[*ids] = ball;
 
+	new MyPrismaticJoint(world, false, ground, paddle, b2Vec2(0, 0), b2Vec2(1.0f, 0.0f), 0, true, -1000.0f, 1000.0f, false, 0, 0);
 
 	//各类砖块模板
-	BrickObj* brickObjPrototype = nullptr;
-	LengthenBrick* lengthenBrickPrototype = nullptr;
-	ShortenBrick* shortenBrickPrototype = nullptr;
-	ReversalBrick* reversalBrickPrototype = nullptr;
-	ImageBrick* imageBrickPrototype = nullptr;
-	AccelerateBrick* accelerateBrickPrototype = nullptr;
-	DeaccelerateBrick* decelerateBrickPrototype = nullptr;
-	PermeatBrick* permeatBrickPrototype = nullptr;
-	StickyBrick* stickyBrickPrototype = nullptr;
-	UpgradeBrick* upgradeBrickPrototype = nullptr;
+	BrickObj* brickObjPrototype;
+	LengthenBrick* lengthenBrickPrototype;
+	ShortenBrick* shortenBrickPrototype;
+	ReversalBrick* reversalBrickPrototype;
+	ImageBrick* imageBrickPrototype;
+	AccelerateBrick* accelerateBrickPrototype;
+	DeaccelerateBrick* decelerateBrickPrototype;
+	PermeatBrick* permeatBrickPrototype;
+	StickyBrick* stickyBrickPrototype;
+	UpgradeBrick* upgradeBrickPrototype;
 
 	ObjSpawner* objSpawner;
 
@@ -1358,56 +1366,73 @@ void ObjManager::createObj(int level, b2World* bWorld, Layer* Llayer)
 	}
 }
 
-void ObjManager::judgePack(char sid, std::string* ids)
+MyMouseJoint* ObjManager::createMouseJoint(b2Vec2 target,float32 frequencyHz, float32 dampingRatio)
+{
+	MyMouseJoint* myMouseJoint= nullptr;
+	myMouseJoint = new MyMouseJoint(new std::string(StringUtils::format("M%d", ++mouseJointIndex)), world, ground, paddle, target,
+		58000.0f*paddle->getPhysicsComponent()->getBody()->GetMass(), frequencyHz, dampingRatio);
+	return myMouseJoint;
+}
+
+
+void ObjManager::judgePack(char sid)
 {
 	switch(sid)
 	{
 		case 'L':
 		{
-			resetLengthenPackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearLengthenPackResetList), 7.0f, 0, 7.0f);
+			//resetLengthenPackList.push_back(*ids);
+			//clearLengthenPackResetList();
+			lengthenPackReset();
 			break;
 		}
 		case 'S':
 		{
-			resetShortenPackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearShortenPackResetList), 7.0f, 0, 7.0f);
+			//resetShortenPackList.push_back(*ids);
+			//clearShortenPackResetList();
+			shortenPackReset();
 			break;
 		}
 		case 'A':
 		{
-			resetAcceleratePackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearAcceleratePackResetList), 7.0f, 0, 7.0f);
+			//resetAcceleratePackList.push_back(*ids);
+			//clearAcceleratePackResetList();
+			acceleratePackReset();
 			break;
 		}
 		case 'D':
 		{
-			resetDeacceleratePackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearDeacceleratePackResetList), 7.0f, 0, 7.0f);
+			//resetDeacceleratePackList.push_back(*ids);
+			//clearDeacceleratePackResetList();
+			deacceleratePackReset();
 			break;
 		}
 		case 'R':
 		{
-			resetReversalPackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearReversalPackResetList), 7.0f, 0, 7.0f);
+			//resetReversalPackList.push_back(*ids);
+			//clearReversalPackResetList();
+			reversalPackReset();
 			break;
 		}
 		case 'I':
 		{
-			resetImagePackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearImagePackResetList), 7.0f, 0, 7.0f);
+			//resetImagePackList.push_back(*ids);
+			//clearImagePackResetList();
+			imgPackReset();
 			break;
 		}
 		case 'F':
 		{
-			resetPermeatPackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearPermeatPackResetList), 7.0f, 0, 7.0f);
+			//resetPermeatPackList.push_back(*ids);
+			//clearPermeatPackResetList();
+			permeatPackReset();
 			break;
 		}
 		case 'U':
 		{
-			resetUpgradePackList.push_back(*ids);
-			schedule(schedule_selector(ObjManager::clearUpgradePackResetList), 7.0f, 0, 7.0f);
+			//resetUpgradePackList.push_back(*ids);
+			//clearUpgradePackResetList();
+			upgradePackReset();
 			break;
 		}
 	}
@@ -1456,13 +1481,13 @@ void ObjManager::updateBall()
 		//设置速度
 		//保证球体匀速运动
 		b2Vec2 vec1 = ball->getSpeed();
-		b2Vec2 vec2 = ball->getRealSpeed();
-		float sSpeed = sqrt(vec1.x*vec1.x + vec1.y*vec1.y);
+		b2Vec2 vec2 = ball->getConstantSpeed();
+		float constantSpeed = sqrt(vec1.x*vec1.x + vec1.y*vec1.y);
 		float realSpeed = sqrt(vec2.x*vec2.x + vec2.y*vec2.y);
-		float ratio = realSpeed / sSpeed;
+		float ratio = realSpeed / constantSpeed;
 		vec1.x *= ratio;
 		vec1.y *= ratio;
-		ball->setSpeed(vec1);
+		ball->setSpeed(vec1);//设置实时速度
 	}
 	else//球体在挡板上
 	{
@@ -1482,9 +1507,8 @@ void ObjManager::updateBall()
 		float fBallY = ball->getRadius() + paddle->getHeight();	/*球与挡板的位置Y偏移量*/
 		ball->setPosition(b2Vec2(vec.x * pixToMeter + fBallX, vec.y * pixToMeter + fBallY));
 
-		//设置速度
 		//保证球体静止
-		ball->setSpeed(b2Vec2(0, 0));
+		ball->setSpeed(b2Vec2(0, 0));//设置实时速度
 
 	}//球在挡板上
 
@@ -1568,6 +1592,25 @@ void ObjManager::updatePaddle()
 		}
 	}
 }
+
+void ObjManager::updateBrickObj(std::string* ids, b2Contact* contact, int attack)
+{
+	BrickObj* brick = (BrickObj*)objMap[*ids];
+	int HP = brick->getHP() - attack;//让砖块的生命值减去球的攻击力
+	if (HP <= 0)
+	{
+		addObj2Delete(*ids);
+		b2Filter filter;
+		filter.categoryBits = 0;
+		contact->GetFixtureB()->SetFilterData(filter);
+	}
+	else
+	{
+		brick->setHP(HP);
+		updateTexture(brick->getID()->at(1),ids);
+	}
+}
+
 
 void ObjManager::updateObj()
 {
@@ -1682,7 +1725,7 @@ void ObjManager::deleteObj()
 			}
 			if ((po->getID()->at(0) == 'A') && (po->getID()->at(1) != 'S'))	//除粘黏包裹外均放入还原倒计时
 			{
-				judgePack(po->getID()->at(1), new string(po->getID()->c_str()));
+				//judgePack(po->getID()->at(1), new string(po->getID()->c_str()));
 			}
 		}	
 		//销毁物体
@@ -1711,7 +1754,7 @@ void ObjManager::deleteParticle()
 	layer->removeChild(*il);
 }
 
-void ObjManager::clearImagePackResetList(float delta)
+void ObjManager::clearImagePackResetList()
 {
 	if (resetImagePackList.empty())
 		return;
@@ -1722,7 +1765,7 @@ void ObjManager::clearImagePackResetList(float delta)
 	resetImagePackList.clear();
 }
 
-void ObjManager::clearLengthenPackResetList(float delta)
+void ObjManager::clearLengthenPackResetList()
 {
 	if (resetLengthenPackList.empty())
 		return;
@@ -1733,7 +1776,7 @@ void ObjManager::clearLengthenPackResetList(float delta)
 	resetLengthenPackList.clear();
 }
 
-void ObjManager::clearShortenPackResetList(float delta)
+void ObjManager::clearShortenPackResetList()
 {
 	if (resetShortenPackList.empty())
 		return;
@@ -1744,7 +1787,7 @@ void ObjManager::clearShortenPackResetList(float delta)
 	resetShortenPackList.clear();
 }
 
-void ObjManager::clearPermeatPackResetList(float delta)
+void ObjManager::clearPermeatPackResetList()
 {
 	if (resetPermeatPackList.empty())
 		return;
@@ -1755,7 +1798,7 @@ void ObjManager::clearPermeatPackResetList(float delta)
 	resetPermeatPackList.clear();
 }
 
-void ObjManager::clearReversalPackResetList(float delta)
+void ObjManager::clearReversalPackResetList()
 {
 	if (resetReversalPackList.empty())
 		return;
@@ -1766,7 +1809,7 @@ void ObjManager::clearReversalPackResetList(float delta)
 	resetReversalPackList.clear();
 }
 
-void ObjManager::clearAcceleratePackResetList(float delta)
+void ObjManager::clearAcceleratePackResetList()
 {
 	if (resetDeacceleratePackList.empty())
 		return;
@@ -1777,7 +1820,7 @@ void ObjManager::clearAcceleratePackResetList(float delta)
 	resetDeacceleratePackList.clear();
 }
 
-void ObjManager::clearDeacceleratePackResetList(float delta)
+void ObjManager::clearDeacceleratePackResetList()
 {
 	if (resetAcceleratePackList.empty())
 		return;
@@ -1788,7 +1831,7 @@ void ObjManager::clearDeacceleratePackResetList(float delta)
 	resetAcceleratePackList.clear();
 }
 
-void ObjManager::clearUpgradePackResetList(float delta)
+void ObjManager::clearUpgradePackResetList()
 {
 	if (resetUpgradePackList.empty())
 		return;
@@ -2061,7 +2104,7 @@ void ObjManager::acceleratePackReset()
 void ObjManager::acceleratePackWork()
 {
 	if (ball != nullptr)
-		ball->setSpeed(b2Vec2(ball->getSpeed().x * 1.2f, ball->getSpeed().y * 1.2f));
+		ball->setConstantSpeed(b2Vec2(ball->getConstantSpeed().x * 1.2f, ball->getConstantSpeed().y * 1.2f));
 }
 
 void ObjManager::stickyBrickWork(b2Vec2 pos)
@@ -2094,7 +2137,7 @@ void ObjManager::stickyPackWork()
 	BallObj* newBall = (BallObj*)ball->Clone();
 	layer->addChild(newBall->getGraphicsComponent()->getSprite());
 
-	//删除原球体
+	//就地删除原球体
 	objMap.erase(*ball->getID());
 	layer->removeChild(ball->getGraphicsComponent()->getSprite());
 	world->DestroyBody(ball->getPhysicsComponent()->getBody());
@@ -2221,7 +2264,7 @@ void ObjManager::deacceleratePackReset()
 void ObjManager::deacceleratePackWork()
 {
 	if (ball != nullptr)
-		ball->setSpeed(b2Vec2(ball->getSpeed().x * 0.7f,ball->getSpeed().y * 0.7f));
+		ball->setConstantSpeed(b2Vec2(ball->getConstantSpeed().x * 0.7f,ball->getConstantSpeed().y * 0.7f));
 }
 
 void ObjManager::shortenBrickWork(b2Vec2 pos)
@@ -2267,6 +2310,33 @@ void ObjManager::shortenPackWork()
 	 	paddle->getPhysicsComponent()->getBody()->GetWorldCenter(), true);
  }
 
+ void ObjManager::setPaddleLinearDamping(float32 linearDamping)
+ {
+	 paddle->getPhysicsComponent()->getBody()->SetLinearDamping(linearDamping);
+ }
+
+void ObjManager::shootBall()
+{
+	if (paddle->getSticky() == false)
+		return;
+	paddle->setSticky(false);
+	b2Vec2 vec = paddle->getPosition();
+	if (paddle->getReversal() == true)
+		vec = imgPaddle->getPosition();
+	b2Vec2 vLine(0.0, Ball::s_speed);
+	ball->setConstantSpeed(vLine);
+	ball->setInitialSpeed(vLine);
+}
+
+void ObjManager::setPaddleVelocity(b2Vec2 Speed)
+{
+	paddle->setSpeed(Speed);
+}
+
+Sprite* ObjManager::getPaddleSprite() const
+{
+	return paddle->getGraphicsComponent()->getSprite();
+}
 
 
 

@@ -1,4 +1,5 @@
 #include "ContactListener.h"
+#include "cocos2d.h"
 
 #define BALL_TO_WALL 1
 #define BALL_TO_BRICK 2
@@ -6,29 +7,6 @@
 #define PADDLE_TO_WALL 4
 #define PADDLE_TO_BALL 5
 
-EventHandler* ContactListener::createStrategy(int EventType, b2Body* bodyA, b2Body* bodyB, b2Contact* _contact, GameLayer* _thisLayer, ObjManager* objManager)
-{
-	EventHandler *newStrategy = NULL;
-	switch (EventType)
-	{
-	case 1:
-		newStrategy = new BallToWall(bodyA, bodyB, _contact, _thisLayer, objManager);
-		break;
-	case 2:
-		newStrategy = new BallToBrick(bodyA, bodyB, _contact, _thisLayer, objManager);
-		break;
-	case 3:
-		newStrategy = new PaddleToPack(bodyA, bodyB, _contact, _thisLayer, objManager);
-		break;
-	case 4:
-		newStrategy = new PaddleToWall(bodyA, bodyB, _contact, _thisLayer, objManager);
-		break;
-	case 5:
-		newStrategy = new PaddleToBall(bodyA, bodyB, _contact, _thisLayer, objManager);
-		break;
-	}
-	return newStrategy;
-}
 
 void ContactListener::BeginContact(b2Contact* contact)
 {
@@ -43,23 +21,22 @@ void ContactListener::BeginContact(b2Contact* contact)
 		char preFixA = aid->at(0);
 		char preFixB = bid->at(0);
 		EventHandler *newEvent = NULL;
-		bool isPermeat = objManager->getBallPermeat();
-		if (isPermeat)
-			ballVec = objManager->getBallSpeed();
+		if (ball->isPermeat())
+			ballVec = ball->getBody()->GetLinearVelocity();
 		if ((preFixA == 'Q' || preFixB == 'Q') && (preFixA == 'W' || preFixB == 'W'))//ÇòÓëÇ½µÄÅö×²
-			newEvent = createStrategy(BALL_TO_WALL, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = Strategy(BALL_TO_WALL, bodyA, bodyB, contact, thisLayer, ball, paddle);
 
 		if ((preFixA == 'Q' || preFixB == 'Q') && (preFixA == 'B' || preFixB == 'B'))//ÇòÓë×©¿éµÄÅö×²
-			newEvent = createStrategy(BALL_TO_BRICK, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = Strategy(BALL_TO_BRICK, bodyA, bodyB, contact, thisLayer, ball, paddle);
 
 		if ((preFixA == 'P' || preFixB == 'P') && (preFixA == 'A' || preFixB == 'A'))//µ²°åÓë°ü¹üµÄÅö×²
-			newEvent = createStrategy(PADDLE_TO_PACK, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = Strategy(PADDLE_TO_PACK, bodyA, bodyB, contact, thisLayer, ball, paddle);
 
 		if ((preFixA == 'P' || preFixB == 'P') && (preFixA == 'W' || preFixB == 'W'))//µ²°åÓëÇ½µÄÅö×²
-			newEvent = createStrategy(PADDLE_TO_WALL, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = Strategy(PADDLE_TO_WALL, bodyA, bodyB, contact, thisLayer, ball, paddle);
 
 		if ((preFixA == 'P' || preFixB == 'P') && (preFixA == 'Q' || preFixB == 'Q'))//µ²°åÓëÇòµÄÅö×²
-			newEvent = createStrategy(PADDLE_TO_BALL, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = Strategy(PADDLE_TO_BALL, bodyA, bodyB, contact, thisLayer, ball, paddle);
 
 		newEvent->doStrategy();
 	}
@@ -67,9 +44,9 @@ void ContactListener::BeginContact(b2Contact* contact)
 
 void ContactListener::EndContact(b2Contact* contact)
 {
-	if (objManager->getBallPermeat())
+	if (ball->isPermeat())
 	{
-		objManager->setBallSpeed(ballVec);
+		ball->getBody()->SetLinearVelocity(ballVec);
 	}
 }
 

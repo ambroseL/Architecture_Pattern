@@ -12,7 +12,6 @@ void BallToBrick::doStrategy()
 
 	eventObj* newEvent = new eventObj(SOUND, 0, NULL, contact);
 	eventQueue.push_back(newEvent);
-	//thisLayer->playSound();
 	
 	b2WorldManifold* pos = new b2WorldManifold();
 	contact->GetWorldManifold(pos);
@@ -178,7 +177,6 @@ void BallToWall::doStrategy()
 {
 	eventObj* newEvent = new eventObj(SOUND, 0, NULL, contact);
 	eventQueue.push_back(newEvent);
-	thisLayer->playSound();
 }
 
 void PaddleToPack::doStrategy()
@@ -193,21 +191,18 @@ void PaddleToPack::doStrategy()
 
 	eventObj* newEvent = new eventObj(SOUND, 0, NULL, contact);
 	eventQueue.push_back(newEvent);
-	//thisLayer->playSound();
 
 	if (preFixA == 'A')
 	{
 		eventObj* newEvent = new eventObj(PACK, 0, aid, contact);
 		eventQueue.push_back(newEvent);
 		objManager->addObj2Delete(*aid);
-		//thisLayer->listForDel.push_back(*aid);
 	}
 	else if (preFixB == 'A')
 	{
 		eventObj* newEvent = new eventObj(PACK, 0, bid, contact);
 		eventQueue.push_back(newEvent);
 		objManager->addObj2Delete(*bid);
-		//thisLayer->listForDel.push_back(*bid);
 	}
 }
 
@@ -260,10 +255,8 @@ void PaddleToBall::doStrategy()
 
 	eventObj* newEvent = new eventObj(SOUND, 0, NULL, contact);
 	eventQueue.push_back(newEvent);
-	//thisLayer->playSound();
 	b2WorldManifold* pos = new b2WorldManifold();
 	contact->GetWorldManifold(pos);
-	//thisLayer->playSound();
 	if (aid->at(0) != 'P')
 	{
 

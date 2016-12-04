@@ -8,16 +8,12 @@ using namespace cocos2d;
 
 class ContactListener : public b2ContactListener
 {
-	GameLayer*  thisLayer;
-	ObjManager* objManager;
-	b2Vec2 ballVec;
-
 public:
 
-	EventHandler* createStrategy(int EventType, b2Body* bodyA, b2Body* bodyB, b2Contact* _contact, GameLayer* _thisLayer, ObjManager* objManager);  //创建策略
+	EventHandler* createStrategy(int EventType, b2Body* bodyA, b2Body* bodyB, b2Contact* _contact, ObjManager* objManager);  //创建策略
 
 
-	ContactListener(GameLayer* _thisLayer, ObjManager* objManager):thisLayer(_thisLayer),objManager(objManager)
+	ContactListener(ObjManager* objManager):objManager(objManager)
 	{
 		
 	}
@@ -30,5 +26,7 @@ public:
 
 private:
 	bool isBrick;
+	ObjManager* objManager;
+	b2Vec2 ballVec;
 };
 #endif

@@ -6,25 +6,25 @@
 #define PADDLE_TO_WALL 4
 #define PADDLE_TO_BALL 5
 
-EventHandler* ContactListener::createStrategy(int EventType, b2Body* bodyA, b2Body* bodyB, b2Contact* _contact, GameLayer* _thisLayer, ObjManager* objManager)
+EventHandler* ContactListener::createStrategy(int EventType, b2Body* bodyA, b2Body* bodyB, b2Contact* _contact, ObjManager* objManager)
 {
 	EventHandler *newStrategy = NULL;
 	switch (EventType)
 	{
 	case 1:
-		newStrategy = new BallToWall(bodyA, bodyB, _contact, _thisLayer, objManager);
+		newStrategy = new BallToWall(bodyA, bodyB, _contact, objManager);
 		break;
 	case 2:
-		newStrategy = new BallToBrick(bodyA, bodyB, _contact, _thisLayer, objManager);
+		newStrategy = new BallToBrick(bodyA, bodyB, _contact, objManager);
 		break;
 	case 3:
-		newStrategy = new PaddleToPack(bodyA, bodyB, _contact, _thisLayer, objManager);
+		newStrategy = new PaddleToPack(bodyA, bodyB, _contact, objManager);
 		break;
 	case 4:
-		newStrategy = new PaddleToWall(bodyA, bodyB, _contact, _thisLayer, objManager);
+		newStrategy = new PaddleToWall(bodyA, bodyB, _contact, objManager);
 		break;
 	case 5:
-		newStrategy = new PaddleToBall(bodyA, bodyB, _contact, _thisLayer, objManager);
+		newStrategy = new PaddleToBall(bodyA, bodyB, _contact, objManager);
 		break;
 	}
 	return newStrategy;
@@ -47,22 +47,22 @@ void ContactListener::BeginContact(b2Contact* contact)
 		if (isPermeat)
 			ballVec = objManager->getBallSpeed();
 		if ((preFixA == 'Q' || preFixB == 'Q') && (preFixA == 'W' || preFixB == 'W'))//ÇòÓëÇ½µÄÅö×²
-			newEvent = createStrategy(BALL_TO_WALL, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = createStrategy(BALL_TO_WALL, bodyA, bodyB, contact, objManager);
 
 		if ((preFixA == 'Q' || preFixB == 'Q') && (preFixA == 'B' || preFixB == 'B'))//ÇòÓë×©¿éµÄÅö×²
 		{
 			isBrick = true;
-			newEvent = createStrategy(BALL_TO_BRICK, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = createStrategy(BALL_TO_BRICK, bodyA, bodyB, contact, objManager);
 		}
 
 		if ((preFixA == 'P' || preFixB == 'P') && (preFixA == 'A' || preFixB == 'A'))//µ²°åÓë°ü¹üµÄÅö×²
-			newEvent = createStrategy(PADDLE_TO_PACK, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = createStrategy(PADDLE_TO_PACK, bodyA, bodyB, contact, objManager);
 
 		if ((preFixA == 'P' || preFixB == 'P') && (preFixA == 'W' || preFixB == 'W'))//µ²°åÓëÇ½µÄÅö×²
-			newEvent = createStrategy(PADDLE_TO_WALL, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = createStrategy(PADDLE_TO_WALL, bodyA, bodyB, contact, objManager);
 
 		if ((preFixA == 'P' || preFixB == 'P') && (preFixA == 'Q' || preFixB == 'Q'))//µ²°åÓëÇòµÄÅö×²
-			newEvent = createStrategy(PADDLE_TO_BALL, bodyA, bodyB, contact, thisLayer, objManager);
+			newEvent = createStrategy(PADDLE_TO_BALL, bodyA, bodyB, contact, objManager);
 
 		newEvent->doStrategy();
 	}

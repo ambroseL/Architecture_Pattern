@@ -47,6 +47,9 @@ void PhysicsComponent::setSize(float fWidth, float fHeight)
 	fixtureDef.restitution = 1;
 	fixtureDef.filter = p_filter;
 	body->CreateFixture(&fixtureDef);
+
+
+
 }
 
 
@@ -78,7 +81,7 @@ b2Body* PhysicsComponent::getBody()
 
 void PhysicsComponent::setPosition(b2Vec2 pos)
 {
-	body->SetTransform(pos, body->GetAngle());
+	body->SetTransform(b2Vec2(pos.x / pixToMeter, pos.y / pixToMeter), 0);
 }
 
 
@@ -148,9 +151,9 @@ b2Body* copyBody(b2Body* phyBody)
 	b2Body* body = world->CreateBody(&bodyDef);//创建刚体对象
 	body->SetUserData(phyBody->GetUserData());//记录对应的包装对象指针
 	b2Fixture* fixture = phyBody->GetFixtureList();
-	b2FixtureDef fixtureDef;
-	while (fixture != NULL)
+	if(fixture != NULL)
 	{
+		b2FixtureDef fixtureDef;
 		b2Fixture tmp = *fixture;
 		fixtureDef.shape = tmp.GetShape();
 		fixtureDef.density = tmp.GetDensity();
@@ -159,7 +162,6 @@ b2Body* copyBody(b2Body* phyBody)
 		fixtureDef.filter = tmp.GetFilterData();
 		body->CreateFixture(&fixtureDef);                              //将描述与刚体结合
 		body->SetLinearDamping(-0.0f);                                 //无阻尼
-		fixture++;
 	}
 	return body;
 }

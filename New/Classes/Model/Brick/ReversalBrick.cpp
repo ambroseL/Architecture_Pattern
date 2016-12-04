@@ -17,3 +17,8 @@ BrickObj(physicsComponent, graphicsComponent, id, iHP)
 ReversalBrick::~ReversalBrick()
 {
 }
+
+EntityObj* ReversalBrick::Clone()
+{
+	return new ReversalBrick(physicsComponent->Clone(), graphicsComponent->Clone(), new std::string(id->c_str()), HP);
+}

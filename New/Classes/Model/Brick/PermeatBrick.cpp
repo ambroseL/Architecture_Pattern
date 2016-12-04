@@ -17,3 +17,8 @@ BrickObj(physicsComponent, graphicsComponent, id, iHP)
 PermeatBrick::~PermeatBrick()
 {
 }// ~PermeatBrick
+
+EntityObj* PermeatBrick::Clone()
+{
+	return new PermeatBrick(physicsComponent->Clone(), graphicsComponent->Clone(), new std::string(id->c_str()), HP);
+}

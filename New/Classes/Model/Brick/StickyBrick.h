@@ -37,5 +37,10 @@ public:
 	*析构函数
 	*/
 	~StickyBrick();
+
+	/**
+	*克隆函数，深拷贝
+	*/
+	EntityObj* Clone() override;
 };
 #endif

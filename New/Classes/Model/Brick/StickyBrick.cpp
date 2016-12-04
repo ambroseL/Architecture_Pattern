@@ -17,3 +17,8 @@ BrickObj(physicsComponent, graphicsComponent, id, iHP)
 StickyBrick::~StickyBrick()
 {
 }// ~StickyBrick
+
+EntityObj* StickyBrick::Clone()
+{
+	return new StickyBrick(physicsComponent->Clone(), graphicsComponent->Clone(), new std::string(id->c_str()), HP);
+}

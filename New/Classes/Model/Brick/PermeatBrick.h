@@ -38,5 +38,10 @@ public:
 	*析构函数
 	*/
 	~PermeatBrick();
+
+	/**
+	*克隆函数
+	*/
+	EntityObj* Clone();
 };
 #endif

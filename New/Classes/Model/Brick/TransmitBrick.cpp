@@ -18,3 +18,8 @@ BrickObj(physicsComponent, graphicsComponent, id, iHP)
 TransmitBrick::~TransmitBrick()
 {
 }// ~TransmitBrick
+
+EntityObj* TransmitBrick::Clone()
+{
+	return new TransmitBrick(physicsComponent->Clone(), graphicsComponent->Clone(), new std::string(id->c_str()), HP);
+}

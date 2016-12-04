@@ -3,6 +3,9 @@
 //#include "ContactListener.h""
 //#include "GameSceneManager.h"
 #include "GameManager.h"
+#include "ContactListener.h"
+#include "globalObj.h"
+
 bool GameLayer::init()
 {
 	//调用父类的初始化
@@ -67,21 +70,21 @@ bool GameLayer::init()
 
 	//初始化物理世界
 	//创建重力加速度向量
-	b2Vec2 gravity(0.0f, -3.0f);
+	b2Vec2 gravity(0.0f, 0.0f);
 	//创建物理世界
 	world = new b2World(gravity);
 	//允许静止物体休眠
 	world->SetAllowSleeping(true);
 	
-
+	gameManager = new GameManager();
 	//初始化控制类
 	gameManager->init();
 
-	//创建挡板球体砖块等物体
-	gameManager->createLayerObj(this, world);
+	//创建挡板球体等物体
+	gameManager->initLayer(this, world);
 
 	//添加碰撞监听器
-	//world->SetContactListener(new ContactListener(this));
+	world->SetContactListener(new ContactListener(this, this->gameManager->getObjManager()));
 
 	//创建一个触摸监听
 	auto touchListener = EventListenerTouchOneByOne::create();
@@ -107,12 +110,13 @@ bool GameLayer::init()
 	//松开键盘时回调onKeyReleased方法
 	keyBoardListener->onKeyReleased = CC_CALLBACK_2(GameLayer::onKeyReleased, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(keyBoardListener, this);
-
-	//调用更新
+	
+	////调用更新
 	schedule(schedule_selector(GameLayer::update), 0.01f);
 
 	//定时回调
 	scheduleUpdate();
+	
 	return true;
 }
 
@@ -165,7 +169,7 @@ void GameLayer::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 
 void GameLayer::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
 {
-	gameManager->onKeyPressed(keyCode, event);
+	gameManager->onKeyReleased(keyCode, event);
 }
 
 void GameLayer::step()
@@ -182,9 +186,9 @@ void GameLayer::step()
 
 void GameLayer::update(float delta)
 {
-	step();
+	
 	gameManager->Update();
-	checkResetList();
+	step();
 }
 
 
@@ -233,29 +237,103 @@ void GameLayer::toPause()
 	gameManager->toPause();
 }
 
-void GameLayer::resetPack(float32 delta)
-{	
-	char id = '/0';
-	//id = resetPackList.pop(); 还原队列首部出列，取出待还原的包裹ID
-	//可取出id时执行以下操作
-	gameManager->clearResetPack(id);
-}
-
-void GameLayer::checkResetList()
-{
-	//if(!resetpackList.isempty()) //待还原包裹队列非空时执行定时还原操作
-	schedule(schedule_selector(GameLayer::resetPack), 7.0f, 0, 7.0f);
-}
 
 void GameLayer::playSound()
 {
 	gameManager->playSound();
 }
 
+void GameLayer::createBricks()
+{
+	gameManager->createLayerBricks(this, world);
+}
 
+void GameLayer::resetAcceleratePack(float delta)
+{
+	gameManager->getObjManager()->clearAcceleratePackResetList();
+}
 
+void GameLayer::resetDeacceleratePack(float delta)
+{
+	gameManager->getObjManager()->clearDeacceleratePackResetList();
+}
 
+void GameLayer::resetImagePack(float delta)
+{
+	gameManager->getObjManager()->clearImagePackResetList();
+}
 
+void GameLayer::resetLengthenPack(float delta)
+{
+	gameManager->getObjManager()->clearLengthenPackResetList();
+}
+
+void GameLayer::resetPermeatPack(float delta)
+{
+	gameManager->getObjManager()->clearPermeatPackResetList();
+}
+
+void GameLayer::resetReversalPack(float delta)
+{
+	gameManager->getObjManager()->clearReversalPackResetList();
+}
+
+void GameLayer::resetShortenPack(float delta)
+{
+	gameManager->getObjManager()->clearShortenPackResetList();
+}
+
+void GameLayer::resetUpgradePack(float delta)
+{
+	gameManager->getObjManager()->clearUpgradePackResetList();
+}
+
+void GameLayer::setPackresetschedule(char sid)
+{
+	switch (sid)
+	{
+	case 'L':
+	{
+		schedule(schedule_selector(GameLayer::resetLengthenPack), 7.0f, 0, 7.0f); 
+		break;
+	}
+	case 'S':
+	{
+		schedule(schedule_selector(GameLayer::resetShortenPack), 7.0f, 0, 7.0f);
+		break;
+	}
+	case 'A':
+	{
+		schedule(schedule_selector(GameLayer::resetAcceleratePack), 7.0f, 0, 7.0f);
+		break;
+	}
+	case 'D':
+	{
+		schedule(schedule_selector(GameLayer::resetDeacceleratePack), 7.0f, 0, 7.0f);
+		break;
+	}
+	case 'R':
+	{
+		schedule(schedule_selector(GameLayer::resetReversalPack), 7.0f, 0, 7.0f);
+		break;
+	}
+	case 'I':
+	{
+		schedule(schedule_selector(GameLayer::resetImagePack), 7.0f, 0, 7.0f);
+		break;
+	}
+	case 'F':
+	{
+		schedule(schedule_selector(GameLayer::resetPermeatPack), 7.0f, 0, 7.0f);
+		break;
+	}
+	case 'U':
+	{
+		schedule(schedule_selector(GameLayer::resetUpgradePack), 7.0f, 0, 7.0f);
+		break;
+	}
+	}
+}
 
 
 

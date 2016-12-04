@@ -11,7 +11,6 @@
 #include "PermeatBrick.h"
 #include "ReversalBrick.h"
 #include "DeaccelerateBrick.h"
-#include "TransmitBrick.h"
 #include "UpgradeBrick.h"
 #include "StickyBrick.h"
 #include "ObjSpawner.h"
@@ -22,6 +21,8 @@
 #include "ShortenBrick.h"
 #include "AccelerateBrick.h"
 #include "GameLayer.h"
+#include "globalObj.h"
+#include "TransmitBrick.h"
 
 struct pos
 {
@@ -30,17 +31,14 @@ struct pos
 	int cnt;
 };
 
-ObjManager::ObjManager():ball(nullptr),paddle(nullptr),imgPaddle(nullptr),layer(nullptr),world(nullptr)
-{
-}
+#define pixToMeter 5     //含义为几个像素为1米
 
-ObjManager::~ObjManager()
+ObjManager::ObjManager()
 {
-}
+	paddle = new PaddleObj();
+	ball = new BallObj();
+	imgPaddle = nullptr;
 
-
-void ObjManager::init()
-{
 	//清空待删除和待还原列表
 	resetLengthenPackList.clear();
 	resetShortenPackList.clear();
@@ -105,7 +103,12 @@ void ObjManager::init()
 	brickCount = 0;
 }
 
-void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
+ObjManager::~ObjManager()
+{
+}
+
+
+void ObjManager::createObj(b2World* bWorld, GameLayer* Llayer)
 {
 	world = bWorld;
 	layer = Llayer;
@@ -171,7 +174,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 	
 
 	//创建挡板
-	float sWidth = 75.0;				/*初始宽度*/
+	float sWidth = 60.0;				/*初始宽度*/
 	float sHeight = 20.0;				/*初始高度*/
 
 	data = new float[4]{ 0, -364, sWidth, sHeight };
@@ -188,155 +191,169 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 	//创建球
 	float fRadius = 15.0;				/*球的半径*/
 	float fBallX = 0.0;					/*球与挡板的位置X偏移量*/
-	float fBallY = fRadius + sHeight;	/*球与挡板的位置Y偏移量*/
+	float fBallY = 40.0;				/*球与挡板的位置Y偏移量*/
 
 	b2Vec2 vec = paddle->getPosition();
-	data = new float[3]{ vec.x * pixToMeter + fBallX, vec.y * pixToMeter + fBallY, fRadius};
+	data = new float[3]{ vec.x * pixToMeter + fBallX, vec.y * pixToMeter + fBallY, fRadius };
 	ids = new std::string(StringUtils::format("Q%d", ++ballObjIndex));
 	Sprite* spriteBall = createSprite(0, data, "Image/Ball1.png");
+	ParticleSystem* cps = createParticle(0.8, 00.6f, ccp(data[0], data[1]));
 	layer->addChild(spriteBall);
-	spriteBall->setPosition(Point(origin.x + visibleSize.width / 2 + data[0] * pixToMeter + fBallX,
-		origin.y + visibleSize.height / 2 + data[1] * pixToMeter + fBallY));
+	layer->addChild(cps);
     body = createBody(1, 0, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
 	physicsComponent = new PhysicsComponent(body);
-	graphicsComponent = new GraphicsComponent(spriteBall);
+	graphicsComponent = new GraphicsComponent(spriteBall,cps);
 	ball = new BallObj(physicsComponent, graphicsComponent, ids);
 	objMap[*ids] = ball;
 
 	new MyPrismaticJoint(world, false, ground, paddle, b2Vec2(0, 0), b2Vec2(1.0f, 0.0f), 0, true, -1000.0f, 1000.0f, false, 0, 0);
+}
 
-	//各类砖块模板
-	BrickObj* brickObjPrototype;
-	LengthenBrick* lengthenBrickPrototype;
-	ShortenBrick* shortenBrickPrototype;
-	ReversalBrick* reversalBrickPrototype;
-	ImageBrick* imageBrickPrototype;
-	AccelerateBrick* accelerateBrickPrototype;
-	DeaccelerateBrick* decelerateBrickPrototype;
-	PermeatBrick* permeatBrickPrototype;
-	StickyBrick* stickyBrickPrototype;
-	UpgradeBrick* upgradeBrickPrototype;
+void ObjManager::createBricks(b2World* bWorld, GameLayer* Llayer)
+{
+	int level = layer->getLevel();
+	EntityObj* po;
+	GraphicsComponent* graphicsComponent;
+	PhysicsComponent* physicsComponent;
+	b2Body* body;
+	Sprite* sprite;
+	float* data;
+	std::string* ids;
 
 	ObjSpawner* objSpawner;
 
-	//创建普通砖块模板
-	data = new float[4]{ 0.0f, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BC%d", 0));
-	sprite = createSprite(1, data, "Image/Common_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	brickObjPrototype = new BrickObj(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = brickObjPrototype;
-
-	//创建长度砖块模板
-	data = new float[4]{ -61, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BL%d", 0));
-	sprite = createSprite(1, data, "Image/lengthen_Shorten_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	lengthenBrickPrototype = new LengthenBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = lengthenBrickPrototype;
-
-	data = new float[4]{ 61, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BS%d", 0));
-	sprite = createSprite(1, data, "Image/Lengthen_Shorten_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	shortenBrickPrototype = new ShortenBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = shortenBrickPrototype;
-
-	//创建颠倒砖块模板
-	data = new float[4]{ -122, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BR%d", 0));
-	sprite = createSprite(1, data, "Image/Reversal_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	reversalBrickPrototype = new ReversalBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = reversalBrickPrototype;
-
-	//创建镜像砖块模板
-	data = new float[4]{ 122.0f, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BI%d", 0));
-	sprite = createSprite(1, data, "Image/Image_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	imageBrickPrototype = new ImageBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = imageBrickPrototype;
-
-	//创建加速砖块模板
-	data = new float[4]{ -183.0f, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BA%d", 0));
-	sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	accelerateBrickPrototype = new AccelerateBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = accelerateBrickPrototype;
-
-	//创建减速砖块模板
-	data = new float[4]{ 183.0f, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BD%d", 0));
-	sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	decelerateBrickPrototype = new DeaccelerateBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = decelerateBrickPrototype;
-
-	//创建穿透砖块模板
-	data = new float[4]{ -244.0f, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BF%d", 0));
-	sprite = createSprite(1, data, "Image/Fast_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	permeatBrickPrototype = new PermeatBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = permeatBrickPrototype;
-
-	//创建粘黏砖块模板
-	data = new float[4]{ 244.0f, 230.0f - 0 * 31.0f, 30, 15 };
-	ids = new std::string(StringUtils::format("BG%d", 0));
-	sprite = createSprite(1, data, "Image/Sticky_Brick1.png");
-	layer->addChild(sprite);
-	graphicsComponent = new GraphicsComponent(sprite);
-	body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-	physicsComponent = new PhysicsComponent(body);
-	stickyBrickPrototype = new StickyBrick(physicsComponent, graphicsComponent, ids);
-	objMap[*ids] = stickyBrickPrototype;
-
+	
 	int index = 0;
 	//批量生成被撞击消失的木块
 	if (level == 1)
-	{		
-		for(int i = 1; i < 5; i++)
+	{
+		//各类砖块模板
+		BrickObj* brickObjPrototype = nullptr;
+		LengthenBrick* lengthenBrickPrototype = nullptr;
+		ShortenBrick* shortenBrickPrototype = nullptr;
+		ReversalBrick* reversalBrickPrototype = nullptr;
+		ImageBrick* imageBrickPrototype = nullptr;
+		AccelerateBrick* accelerateBrickPrototype = nullptr;
+		DeaccelerateBrick* decelerateBrickPrototype = nullptr;
+		PermeatBrick* permeatBrickPrototype = nullptr;
+		StickyBrick* stickyBrickPrototype = nullptr;
+		
+		
+		//创建普通砖块模板
+		data = new float[4]{ 0.0f, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BC%d", 0));
+		sprite = createSprite(1, data, "Image/Common_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		brickObjPrototype = new BrickObj(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = brickObjPrototype;
+
+		//创建增长砖块模板
+		data = new float[4]{ -61, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BL%d", 0));
+		sprite = createSprite(1, data, "Image/lengthen_Shorten_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		lengthenBrickPrototype = new LengthenBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = lengthenBrickPrototype;
+
+		//创建缩短砖块模板
+		data = new float[4]{ 61, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BS%d", 0));
+		sprite = createSprite(1, data, "Image/Lengthen_Shorten_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		shortenBrickPrototype = new ShortenBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = shortenBrickPrototype;
+
+		//创建颠倒砖块模板
+		data = new float[4]{ -122, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BR%d", 0));
+		sprite = createSprite(1, data, "Image/Reversal_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		reversalBrickPrototype = new ReversalBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = reversalBrickPrototype;
+
+		////创建镜像砖块模板
+		data = new float[4]{ 122.0f, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BI%d", 0));
+		sprite = createSprite(1, data, "Image/Image_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		imageBrickPrototype = new ImageBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = imageBrickPrototype;
+
+		////创建加速砖块模板
+		data = new float[4]{ -183.0f, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BA%d", 0));
+		sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		accelerateBrickPrototype = new AccelerateBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = accelerateBrickPrototype;
+
+		////创建减速砖块模板
+		data = new float[4]{ 183.0f, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BD%d", 0));
+		sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		decelerateBrickPrototype = new DeaccelerateBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = decelerateBrickPrototype;
+
+		//创建穿透砖块模板
+		data = new float[4]{ -244.0f, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BF%d", 0));
+		sprite = createSprite(1, data, "Image/Fast_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		permeatBrickPrototype = new PermeatBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = permeatBrickPrototype;
+
+		////创建粘黏砖块模板
+		data = new float[4]{ 244.0f, 230.0f - 0 * 31.0f, 30, 15 };
+		ids = new std::string(StringUtils::format("BG%d", 0));
+		sprite = createSprite(1, data, "Image/Sticky_Brick1.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		stickyBrickPrototype = new StickyBrick(physicsComponent, graphicsComponent, ids);
+		objMap[*ids] = stickyBrickPrototype;
+
+		for (int i = 1; i < 5; i++)
 		{
 			//批量生产普通转块
 			objSpawner = new ObjSpawner(brickObjPrototype);
 			BrickObj* brickObj = (BrickObj*)objSpawner->spawnEntity();
-			brickObj->setPosition(b2Vec2(0.0f, 230.0f - i * 31.0f));
+			brickObj->setPosition(b2Vec2(0.0f, (230.0f - i * 31.0f)));
 			layer->addChild(brickObj->getGraphicsComponent()->getSprite());
 			ids = new std::string(StringUtils::format("BC%d", index + 1));
 			brickObj->setID(ids);
 			objMap[*ids] = brickObj;
 
-			//批量生产长度转块
+			////批量生产长度转块
 			objSpawner = new ObjSpawner(lengthenBrickPrototype);
 			LengthenBrick* lengthenBrickObj = (LengthenBrick*)objSpawner->spawnEntity();
-			lengthenBrickObj->setPosition(b2Vec2(-61, 230.0f - i * 31.0f));
 			layer->addChild(lengthenBrickObj->getGraphicsComponent()->getSprite());
+			lengthenBrickObj->setPosition(b2Vec2(-61, 230.0f - i * 31.0f));
 			ids = new std::string(StringUtils::format("BL%d", index + 1));
 			lengthenBrickObj->setID(ids);
 			objMap[*ids] = lengthenBrickObj;
@@ -350,7 +367,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 			shortenBrickObj->setID(ids);
 			objMap[*ids] = shortenBrickObj;
 
-			//批量生产颠倒砖块模板
+			////批量生产颠倒砖块模板
 			objSpawner = new ObjSpawner(reversalBrickPrototype);
 			ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
 			reversalBrickObj->setPosition(b2Vec2(-122, 230.0f - i * 31.0f));
@@ -359,7 +376,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 			reversalBrickObj->setID(ids);
 			objMap[*ids] = reversalBrickObj;
 
-			//批量生产镜像砖块模板
+			////批量生产镜像砖块模板
 			objSpawner = new ObjSpawner(imageBrickPrototype);
 			ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
 			imageBrickObj->setPosition(b2Vec2(122.0f, 230.0f - i * 31.0f));
@@ -368,7 +385,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 			imageBrickObj->setID(ids);
 			objMap[*ids] = imageBrickObj;
 
-			//批量生产加速砖块
+			////批量生产加速砖块
 			objSpawner = new ObjSpawner(accelerateBrickPrototype);
 			AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
 			accelerateBrickObj->setPosition(b2Vec2(-183.0f, 230.0f - i * 31.0f));
@@ -377,7 +394,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 			accelerateBrickObj->setID(ids);
 			objMap[*ids] = accelerateBrickObj;
 
-			//批量生产减速砖块
+			////批量生产减速砖块
 			objSpawner = new ObjSpawner(decelerateBrickPrototype);
 			DeaccelerateBrick* deaccelerateBrickObj = (DeaccelerateBrick*)objSpawner->spawnEntity();
 			deaccelerateBrickObj->setPosition(b2Vec2(183.0f, 230.0f - i * 31.0f));
@@ -386,31 +403,39 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 			deaccelerateBrickObj->setID(ids);
 			objMap[*ids] = deaccelerateBrickObj;
 
-			//批量生产穿透砖块
+			////批量生产穿透砖块
 			objSpawner = new ObjSpawner(permeatBrickPrototype);
 			PermeatBrick* permeatBrickObj = (PermeatBrick*)objSpawner->spawnEntity();
 			layer->addChild(permeatBrickObj->getGraphicsComponent()->getSprite());
-			permeatBrickObj->setPosition(b2Vec2(-244.0f, 230.0f - 0 * 31.0f));
+			permeatBrickObj->setPosition(b2Vec2(-244.0f, 230.0f - i * 31.0f));
 			ids = new std::string(StringUtils::format("BF%d", index + 1));
 			permeatBrickObj->setID(ids);
 			objMap[*ids] = permeatBrickObj;
 
-			//批量生产粘黏砖块
+			////批量生产粘黏砖块
 			objSpawner = new ObjSpawner(stickyBrickPrototype);
 			StickyBrick* stickyBrickObj = (StickyBrick*)objSpawner->spawnEntity();
 			layer->addChild(stickyBrickObj->getGraphicsComponent()->getSprite());
-			stickyBrickObj->setPosition(b2Vec2(-244.0f, 230.0f - i * 31.0f));
+			stickyBrickObj->setPosition(b2Vec2(244.0f, 230.0f - i * 31.0f));
 			ids = new std::string(StringUtils::format("BG%d", index + 1));
 			stickyBrickObj->setID(ids);
 			objMap[*ids] = stickyBrickObj;
 
 			index++;
-		}		
+		}
 		brickCount = 45;
 	}
 	else if (level == 2)
 	{
-		upgradeBrickPrototype = nullptr;
+		//各类砖块模板
+		BrickObj* brickObjPrototype = nullptr;
+		LengthenBrick* lengthenBrickPrototype = nullptr;
+		ShortenBrick* shortenBrickPrototype = nullptr;
+		ImageBrick* imageBrickPrototype = nullptr;
+		AccelerateBrick* accelerateBrickPrototype = nullptr;
+		StickyBrick* stickyBrickPrototype = nullptr;
+		UpgradeBrick* upgradeBrickPrototype = nullptr;
+
 		//创建传送砖块模板
 		data = new float[4]{ 390.0f, 280.0f, 30, 15 };
 		ids = new std::string(StringUtils::format("BT%d", ++transmitBrickIndex));
@@ -431,29 +456,44 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 		transmitBrick->setID(ids);
 		objMap[*ids] = transmitBrick;
 
+
 		for (int i = 0; i < 5; i++)
 		{
 			for (int j = 0; j < 5 - i; j++)
 			{
-				switch(j)
+				switch (j)
 				{
 					case 0:
 					{
-						//批量生产最高的普通转块
-						objSpawner = new ObjSpawner(brickObjPrototype);
-						BrickObj* brickObj = (BrickObj*)objSpawner->spawnEntity();
-						brickObj->setPosition(b2Vec2(-320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f));
-						layer->addChild(brickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BH%d", index + 1));
-						brickObj->setID(ids);
-						brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Hard_Brick.png");
-						brickObj->setHP(1000000007);
-						objMap[*ids] = brickObj;
+						if(brickObjPrototype == nullptr)
+						{		
+							//创建最高硬度砖块模板
+							data = new float[4]{ -320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f, 30, 15 };
+							ids = new std::string(StringUtils::format("BH%d", index + 1));
+							sprite = createSprite(1, data, "Image/Hard_Brick.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							brickObjPrototype = new BrickObj(physicsComponent, graphicsComponent, ids, 1000000007);
+							objMap[*ids] = brickObjPrototype;
+						}
+						else
+						{
+							//批量生产最高硬度转块
+							objSpawner = new ObjSpawner(brickObjPrototype);
+							BrickObj* brickObj = (BrickObj*)objSpawner->spawnEntity();
+							brickObj->setPosition(b2Vec2(-320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f));
+							layer->addChild(brickObj->getGraphicsComponent()->getSprite());
+							ids = new std::string(StringUtils::format("BH%d", index + 1));
+							brickObj->setID(ids);
+							objMap[*ids] = brickObj;
+						}	
 						break;
 					}
 					case 1:
 					{
-						if(upgradeBrickPrototype == nullptr)
+						if (upgradeBrickPrototype == nullptr)
 						{
 							//创建升级砖块模板
 							data = new float[4]{ -320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f, 30, 15 };
@@ -463,8 +503,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 							graphicsComponent = new GraphicsComponent(sprite);
 							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
 							physicsComponent = new PhysicsComponent(body);
-							upgradeBrickPrototype = new UpgradeBrick(physicsComponent, graphicsComponent, ids);
-							upgradeBrickPrototype->setHP(2);
+							upgradeBrickPrototype = new UpgradeBrick(physicsComponent, graphicsComponent, ids, 2);
 							objMap[*ids] = upgradeBrickPrototype;
 						}
 						else
@@ -476,35 +515,64 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 							layer->addChild(upgradeBrick->getGraphicsComponent()->getSprite());
 							ids = new std::string(StringUtils::format("BU%d", index + 1));
 							upgradeBrick->setID(ids);
-							objMap[*ids] = upgradeBrick;						
+							objMap[*ids] = upgradeBrick;
 						}
 						break;
 					}
 					case 2:
 					{
-						//批量增长砖块
-						objSpawner = new ObjSpawner(lengthenBrickPrototype);
-						LengthenBrick* lengthenBrickObj = (LengthenBrick*)objSpawner->spawnEntity();
-						lengthenBrickObj->setPosition(b2Vec2(-320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f));
-						layer->addChild(lengthenBrickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BL%d", index + 1));
-						lengthenBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Lengthen_Shorten_Brick2.png");
-						lengthenBrickObj->setHP(2);
-						lengthenBrickObj->setID(ids);
-						objMap[*ids] = lengthenBrickObj;
+						if(lengthenBrickPrototype == nullptr)
+						{
+							//创建增长砖块模板
+							data = new float[4]{ -320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f, 30, 15 };
+							ids = new std::string(StringUtils::format("BL%d", index + 1));
+							sprite = createSprite(1, data, "Image/Lengthen_Shorten_Brick2.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							lengthenBrickPrototype = new LengthenBrick(physicsComponent, graphicsComponent, ids, 2);
+							objMap[*ids] = lengthenBrickPrototype;
+						}
+						else
+						{
+							//批量增长砖块
+							objSpawner = new ObjSpawner(lengthenBrickPrototype);
+							LengthenBrick* lengthenBrickObj = (LengthenBrick*)objSpawner->spawnEntity();
+							lengthenBrickObj->setPosition(b2Vec2(-320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f));
+							layer->addChild(lengthenBrickObj->getGraphicsComponent()->getSprite());
+							ids = new std::string(StringUtils::format("BL%d", index + 1));
+							lengthenBrickObj->setID(ids);
+							objMap[*ids] = lengthenBrickObj;
+						}		
 						break;
 					}
 					case 3:
 					{
-						//批量生产镜像砖块
-						objSpawner = new ObjSpawner(imageBrickPrototype);
-						ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
-						imageBrickObj->setPosition(b2Vec2(-320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f));
-						layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BI%d", index + 1));
-						imageBrickObj->setID(ids);
-						imageBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Image_Brick1.png");
-						objMap[*ids] = imageBrickObj;
+						//创建镜像砖块模板
+						if(imageBrickPrototype == nullptr)
+						{
+							data = new float[4]{ -320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f, 30, 15 };
+							ids = new std::string(StringUtils::format("BI%d", index + 1));
+							sprite = createSprite(1, data, "Image/Image_Brick2.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							imageBrickPrototype = new ImageBrick(physicsComponent, graphicsComponent, ids, 2);
+							objMap[*ids] = imageBrickPrototype;
+						}
+						else
+						{
+							//批量生产镜像砖块
+							objSpawner = new ObjSpawner(imageBrickPrototype);
+							ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
+							imageBrickObj->setPosition(b2Vec2(-320.0f + (i * 40.0f) + j * 61.0f, 200.0f - i * 31.0f));
+							layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
+							ids = new std::string(StringUtils::format("BI%d", index + 1));
+							imageBrickObj->setID(ids);
+							objMap[*ids] = imageBrickObj;
+						}
 						break;
 					}
 					case 4:
@@ -516,64 +584,115 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 						layer->addChild(brickObj->getGraphicsComponent()->getSprite());
 						ids = new std::string(StringUtils::format("BC%d", index + 1));
 						brickObj->setID(ids);
+						brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Common_Brick2.png");
+						brickObj->setHP(2);
 						objMap[*ids] = brickObj;
 						break;
-					}				
+					}
 				}
 				index++;
 			}
+			
 			for (int j = 0; j < 5 - i; j++)
 			{
-				switch(j)
+				switch (j)
 				{
 					case 0:
-					{	//批量生产最高的普通转块
+					{	
+						//批量生产最高硬度转块
 						objSpawner = new ObjSpawner(brickObjPrototype);
 						BrickObj* brickObj = (BrickObj*)objSpawner->spawnEntity();
-						layer->addChild(brickObj->getGraphicsComponent()->getSprite());
 						brickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
+						layer->addChild(brickObj->getGraphicsComponent()->getSprite());
 						ids = new std::string(StringUtils::format("BH%d", index + 1));
 						brickObj->setID(ids);
-						brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Hard_Brick.png");
-						brickObj->setHP(1000000007);
 						objMap[*ids] = brickObj;
 						break;
 					}
 					case 1:
-					{	//批量粘黏砖块
-						objSpawner = new ObjSpawner(lengthenBrickPrototype);
-						StickyBrick* stickyBrickObj = (StickyBrick*)objSpawner->spawnEntity();
-						layer->addChild(stickyBrickObj->getGraphicsComponent()->getSprite());
-						stickyBrickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
-						ids = new std::string(StringUtils::format("BG%d", index + 1));
-						stickyBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Sticky_Brick2.png");
-						stickyBrickObj->setHP(2);
-						stickyBrickObj->setID(ids);
-						objMap[*ids] = stickyBrickObj;
+					{	
+						if(stickyBrickPrototype == nullptr)
+						{
+							////创建粘黏砖块模板
+							data = new float[4]{ 320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f, 30, 15 };
+							ids = new std::string(StringUtils::format("BG%d", index + 1));
+							sprite = createSprite(1, data, "Image/Sticky_Brick2.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							stickyBrickPrototype = new StickyBrick(physicsComponent, graphicsComponent, ids, 2);
+							stickyBrickPrototype->setHP(2);
+							objMap[*ids] = stickyBrickPrototype;
+						}
+						else
+						{
+							//批量粘黏砖块
+							objSpawner = new ObjSpawner(stickyBrickPrototype);
+							StickyBrick* stickyBrickObj = (StickyBrick*)objSpawner->spawnEntity();
+							layer->addChild(stickyBrickObj->getGraphicsComponent()->getSprite());
+							stickyBrickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
+							ids = new std::string(StringUtils::format("BG%d", index + 1));
+							stickyBrickObj->setID(ids);
+							objMap[*ids] = stickyBrickObj;
+						}
 						break;
 					}
 					case 2:
-					{	//批量生产速度砖块
-						objSpawner = new ObjSpawner(accelerateBrickPrototype);
-						AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
-						layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
-						accelerateBrickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
-						ids = new std::string(StringUtils::format("BA%d", index + 1));
-						accelerateBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Accelerate_Decelerate_Brick2.png");
-						accelerateBrickObj->setHP(2);
-						accelerateBrickObj->setID(ids);
-						objMap[*ids] = accelerateBrickObj;
+					{	
+						//创建加速砖块模板
+						if(accelerateBrickPrototype == nullptr)
+						{
+							data = new float[4]{ 320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f, 30, 15 };
+							ids = new std::string(StringUtils::format("BA%d", index + 1));
+							sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick2.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							accelerateBrickPrototype = new AccelerateBrick(physicsComponent, graphicsComponent, ids, 2);
+							objMap[*ids] = accelerateBrickPrototype;
+						}
+						else
+						{
+							//批量生产加速砖块
+							objSpawner = new ObjSpawner(accelerateBrickPrototype);
+							AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
+							layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
+							accelerateBrickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
+							ids = new std::string(StringUtils::format("BA%d", index + 1));
+							accelerateBrickObj->setID(ids);
+							objMap[*ids] = accelerateBrickObj;
+						}			
 						break;
 					}
 					case 3:
-					{	//批量生产缩短砖块
-						objSpawner = new ObjSpawner(shortenBrickPrototype);
-						ShortenBrick* shortenBrickObj = (ShortenBrick*)objSpawner->spawnEntity();
-						layer->addChild(shortenBrickObj->getGraphicsComponent()->getSprite());
-						shortenBrickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
-						ids = new std::string(StringUtils::format("BS%d", index + 1));
-						shortenBrickObj->setID(ids);
-						objMap[*ids] = shortenBrickObj;
+					{	
+						if(shortenBrickPrototype == nullptr)
+						{
+							//创建缩短砖块模板
+							data = new float[4]{ 320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f, 30, 15 };
+							ids = new std::string(StringUtils::format("BS%d", index + 1));
+							sprite = createSprite(1, data, "Image/Lengthen_Shorten_Brick2.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							shortenBrickPrototype = new ShortenBrick(physicsComponent, graphicsComponent, ids, 2);
+							objMap[*ids] = shortenBrickPrototype;
+						}
+						else
+						{
+							//批量生产缩短砖块
+							objSpawner = new ObjSpawner(shortenBrickPrototype);
+							ShortenBrick* shortenBrickObj = (ShortenBrick*)objSpawner->spawnEntity();
+							layer->addChild(shortenBrickObj->getGraphicsComponent()->getSprite());
+							shortenBrickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
+							ids = new std::string(StringUtils::format("BS%d", index + 1));
+							shortenBrickObj->setID(ids);
+							objMap[*ids] = shortenBrickObj;
+						}
+					
 						break;
 					}
 					case 4:
@@ -584,6 +703,8 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 						brickObj->setPosition(b2Vec2(320.0f - (i * 40.0f) - j * 61.0f, 200.0f - i * 31.0f));
 						ids = new std::string(StringUtils::format("BC%d", index + 1));
 						brickObj->setID(ids);
+						brickObj->setHP(2);
+						brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Common_Brick2.png");
 						objMap[*ids] = brickObj;
 						break;
 					}
@@ -595,7 +716,15 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 	}
 	else if (level == 3)
 	{
-		upgradeBrickPrototype = nullptr;
+		//各类砖块模板
+		ReversalBrick* reversalBrickPrototype = nullptr;
+		ImageBrick* imageBrickPrototype = nullptr;
+		AccelerateBrick* accelerateBrickPrototype = nullptr;
+		StickyBrick* stickyBrickPrototype = nullptr;
+		UpgradeBrick* upgradeBrickPrototype = nullptr;
+		BrickObj* brickObjPrototype = nullptr;
+
+
 		data = new float[4]{ 390.0f, 200.0f, 30, 15 };
 		ids = new std::string(StringUtils::format("BT%d", ++transmitBrickIndex));
 		sprite = createSprite(1, data, "Image/Transmit_Brick.png");
@@ -613,29 +742,31 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 		ids = new std::string(StringUtils::format("BT%d", ++transmitBrickIndex));
 		transmitBrick->setID(ids);
 		objMap[*ids] = transmitBrick;
-		
+
 		pos p[1005];
 		int tot = 3, cnt = 1;
 		p[1].x = 30.0f;
 		p[1].y = 150.0f;
 		p[1].cnt = 1;
 
-		//批量生产最高的普通转块
-		objSpawner = new ObjSpawner(brickObjPrototype);
-		BrickObj* brickObj = (BrickObj*)objSpawner->spawnEntity();
-		layer->addChild(brickObj->getGraphicsComponent()->getSprite());
-		brickObj->setPosition(b2Vec2(p[1].x, p[1].y));
+		
+		//创建最高硬度砖块模板
+		data = new float[4]{ p[1].x, p[1].y, 30, 15 };
 		ids = new std::string(StringUtils::format("BH%d", ++index));
-		brickObj->setID(ids);
-		brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Hard_Brick.png");
-		brickObj->setHP(1000000007);
-		objMap[*ids] = brickObj;
-
+		sprite = createSprite(1, data, "Image/Hard_Brick.png");
+		layer->addChild(sprite);
+		graphicsComponent = new GraphicsComponent(sprite);
+		body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+		physicsComponent = new PhysicsComponent(body);
+		brickObjPrototype = new BrickObj(physicsComponent, graphicsComponent, ids, 1000000007);
+		objMap[*ids] = brickObjPrototype;
+		
+		//批量生产最高硬度的普通转块
+		objSpawner = new ObjSpawner(brickObjPrototype);
 		p[2].x = -31.0f;
 		p[2].y = 150.0f;
 		p[2].cnt = 1;
-
-		brickObj = (BrickObj*)objSpawner->spawnEntity();
+		BrickObj* brickObj = (BrickObj*)objSpawner->spawnEntity();
 		layer->addChild(brickObj->getGraphicsComponent()->getSprite());
 		brickObj->setPosition(b2Vec2(p[2].x, p[2].y));
 		ids = new std::string(StringUtils::format("BH%d", ++index));
@@ -656,6 +787,8 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 		brickObj->setHP(1000000007);
 		objMap[*ids] = brickObj;
 
+		
+
 		for (int i = 1; i <= tot; i++)
 		{
 			if (p[i].cnt == 5)
@@ -666,10 +799,10 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 				p[tot].x = 30.0f + 31.0f * cnt;
 				p[tot].y = 31.0f * cnt + 150.0f;
 				p[tot].cnt = p[i].cnt + 1;
-				switch(p[tot].cnt)
+				switch (p[tot].cnt)
 				{
 					case 2:
-					{	
+					{
 						if (upgradeBrickPrototype == nullptr)
 						{
 							//创建升级砖块模板
@@ -693,43 +826,92 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 							layer->addChild(upgradeBrick->getGraphicsComponent()->getSprite());
 							ids = new std::string(StringUtils::format("BU%d", index + 1));
 							upgradeBrick->setID(ids);
-							objMap[*ids] = upgradeBrick;
-							break;
-						}					
+							objMap[*ids] = upgradeBrick;	
+						}
+						break;
 					}
 					case 3:
-					{	//批量生产镜像砖块
-						objSpawner = new ObjSpawner(imageBrickPrototype);
-						ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
-						imageBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BI%d", index + 1));
-						imageBrickObj->setID(ids);
-						imageBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Image_Brick2.png");
-						imageBrickObj->setHP(2);
-						objMap[*ids] = imageBrickObj;
+					{	
+						//创建镜像砖块模板
+						if (imageBrickPrototype == nullptr)
+						{
+							data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+							ids = new std::string(StringUtils::format("BI%d", index + 1));
+							sprite = createSprite(1, data, "Image/Image_Brick3.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							imageBrickPrototype = new ImageBrick(physicsComponent, graphicsComponent, ids, 3);
+							objMap[*ids] = imageBrickPrototype;
+						}
+						else
+						{
+							//批量生产镜像砖块
+							objSpawner = new ObjSpawner(imageBrickPrototype);
+							ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
+							imageBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+							layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
+							ids = new std::string(StringUtils::format("BI%d", index + 1));
+							imageBrickObj->setID(ids);
+							objMap[*ids] = imageBrickObj;
+						}	
 						break;
 					}
 					case 4:
-					{	//批量生产速度砖块
-						objSpawner = new ObjSpawner(accelerateBrickPrototype);
-						AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
-						layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
-						accelerateBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						ids = new std::string(StringUtils::format("BA%d", index + 1));
-						accelerateBrickObj->setID(ids);
-						objMap[*ids] = accelerateBrickObj;
+					{	
+						//创建加速砖块模板
+						if (accelerateBrickPrototype == nullptr)
+						{
+							data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+							ids = new std::string(StringUtils::format("BA%d", index + 1));
+							sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick3.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							accelerateBrickPrototype = new AccelerateBrick(physicsComponent, graphicsComponent, ids, 3);
+							objMap[*ids] = accelerateBrickPrototype;
+						}
+						else
+						{
+							//批量生产速度砖块
+							objSpawner = new ObjSpawner(accelerateBrickPrototype);
+							AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
+							layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
+							accelerateBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+							ids = new std::string(StringUtils::format("BA%d", index + 1));
+							accelerateBrickObj->setID(ids);
+							objMap[*ids] = accelerateBrickObj;
+						}				
 						break;
 					}
 					case 5:
-					{	//批量生产颠倒砖块模板
-						objSpawner = new ObjSpawner(reversalBrickPrototype);
-						ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
-						layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
-						reversalBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						ids = new std::string(StringUtils::format("BR%d", index + 1));
-						reversalBrickObj->setID(ids);
-						objMap[*ids] = reversalBrickObj;
+					{	
+						if (reversalBrickPrototype == nullptr)
+						{
+							//创建颠倒砖块模板
+							data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+							ids = new std::string(StringUtils::format("BR%d", index + 1));
+							sprite = createSprite(1, data, "Image/Reversal_Brick3.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							reversalBrickPrototype = new ReversalBrick(physicsComponent, graphicsComponent, ids, 3);
+							objMap[*ids] = reversalBrickPrototype;
+						}
+						else
+						{
+							//批量生产颠倒砖块模板
+							objSpawner = new ObjSpawner(reversalBrickPrototype);
+							ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
+							layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
+							reversalBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+							ids = new std::string(StringUtils::format("BR%d", index + 1));
+							reversalBrickObj->setID(ids);
+							objMap[*ids] = reversalBrickObj;
+						}		
 						break;
 					}
 					default:
@@ -753,7 +935,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 				p[tot].y = 31.0f * cnt + 150.0f;
 				p[tot].cnt = p[i].cnt + 1;
 
-				switch(p[tot].cnt)
+				switch (p[tot].cnt)
 				{
 					case 2:
 					{	//批量生产升级砖块
@@ -828,7 +1010,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 				switch (p[tot].cnt)
 				{
 					case 2:
-					{	
+					{
 						if (upgradeBrickPrototype == nullptr)
 						{
 							//创建升级砖块模板
@@ -857,127 +1039,87 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 						}
 					}
 					case 3:
-					{	//批量生产镜像砖块
-						objSpawner = new ObjSpawner(imageBrickPrototype);
-						ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
-						imageBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BI%d", index + 1));
-						imageBrickObj->setID(ids);
-						imageBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Image_Brick2.png");
-						imageBrickObj->setHP(2);
-						objMap[*ids] = imageBrickObj;
-						break;
-					}
-					case 4:
-					{	//批量生产速度砖块
-						objSpawner = new ObjSpawner(accelerateBrickPrototype);
-						AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
-						layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
-						accelerateBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						ids = new std::string(StringUtils::format("BA%d", index + 1));
-						accelerateBrickObj->setID(ids);
-						objMap[*ids] = accelerateBrickObj;
-						break;
-					}
-					case 5:
-					{	//批量生产颠倒砖块模板
-						objSpawner = new ObjSpawner(reversalBrickPrototype);
-						ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
-						layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
-						reversalBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						ids = new std::string(StringUtils::format("BR%d", index + 1));
-						reversalBrickObj->setID(ids);
-						objMap[*ids] = reversalBrickObj;
-						break;
-					}
-					default:
-					{	//批量生产最高的普通转块
-						objSpawner = new ObjSpawner(brickObjPrototype);
-						brickObj = (BrickObj*)objSpawner->spawnEntity();
-						brickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						layer->addChild(brickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BH%d", index + 1));
-						brickObj->setID(ids);
-						brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Hard_Brick.png");
-						brickObj->setHP(1000000007);
-						objMap[*ids] = brickObj;
-						break;
-					}
-				}
-				index++;				
-			}
-			else if (p[i].x > 0)
-			{
-				tot++;
-				p[tot].x = p[i].x + 61.0f;
-				p[tot].y = p[i].y;
-				p[tot].cnt = p[i].cnt + 1;
-				
-				switch (p[tot].cnt)
-				{
-					case 2:
-					{	
-						if (upgradeBrickPrototype == nullptr)
+					{
+						//创建镜像砖块模板
+						if (imageBrickPrototype == nullptr)
 						{
-							//创建升级砖块模板
 							data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
-							ids = new std::string(StringUtils::format("BU%d", index + 1));
-							sprite = createSprite(1, data, "Image/Upgrade_Brick3.png");
+							ids = new std::string(StringUtils::format("BI%d", index + 1));
+							sprite = createSprite(1, data, "Image/Image_Brick3.png");
 							layer->addChild(sprite);
 							graphicsComponent = new GraphicsComponent(sprite);
 							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
 							physicsComponent = new PhysicsComponent(body);
-							upgradeBrickPrototype = new UpgradeBrick(physicsComponent, graphicsComponent, ids);
-							upgradeBrickPrototype->setHP(3);
-							objMap[*ids] = upgradeBrickPrototype;
+							imageBrickPrototype = new ImageBrick(physicsComponent, graphicsComponent, ids, 3);
+							objMap[*ids] = imageBrickPrototype;
 						}
 						else
 						{
-							//批量生产升级砖块
-							objSpawner = new ObjSpawner(upgradeBrickPrototype);
-							UpgradeBrick* upgradeBrick = (UpgradeBrick*)objSpawner->spawnEntity();
-							upgradeBrick->setPosition(b2Vec2(p[tot].x, p[tot].y));
-							layer->addChild(upgradeBrick->getGraphicsComponent()->getSprite());
-							ids = new std::string(StringUtils::format("BU%d", index + 1));
-							upgradeBrick->setID(ids);
-							objMap[*ids] = upgradeBrick;
-							break;
+							//批量生产镜像砖块
+							objSpawner = new ObjSpawner(imageBrickPrototype);
+							ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
+							imageBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+							layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
+							ids = new std::string(StringUtils::format("BI%d", index + 1));
+							imageBrickObj->setID(ids);
+							objMap[*ids] = imageBrickObj;
 						}
-					}
-					case 3:
-					{	//批量生产镜像砖块
-						objSpawner = new ObjSpawner(imageBrickPrototype);
-						ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
-						imageBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BI%d", index + 1));
-						imageBrickObj->setID(ids);
-						imageBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Image_Brick2.png");
-						imageBrickObj->setHP(2);
-						objMap[*ids] = imageBrickObj;
 						break;
 					}
 					case 4:
-					{	//批量生产速度砖块
-						objSpawner = new ObjSpawner(accelerateBrickPrototype);
-						AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
-						layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
-						accelerateBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						ids = new std::string(StringUtils::format("BA%d", index + 1));
-						accelerateBrickObj->setID(ids);
-						objMap[*ids] = accelerateBrickObj;
+					{
+						//创建加速砖块模板
+						if (accelerateBrickPrototype == nullptr)
+						{
+							data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+							ids = new std::string(StringUtils::format("BA%d", index + 1));
+							sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick3.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							accelerateBrickPrototype = new AccelerateBrick(physicsComponent, graphicsComponent, ids, 3);
+							objMap[*ids] = accelerateBrickPrototype;
+						}
+						else
+						{
+							//批量生产速度砖块
+							objSpawner = new ObjSpawner(accelerateBrickPrototype);
+							AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
+							layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
+							accelerateBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+							ids = new std::string(StringUtils::format("BA%d", index + 1));
+							accelerateBrickObj->setID(ids);
+							objMap[*ids] = accelerateBrickObj;
+						}
 						break;
 					}
 					case 5:
-					{	//批量生产颠倒砖块模板
-						objSpawner = new ObjSpawner(reversalBrickPrototype);
-						ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
-						layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
-						reversalBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						ids = new std::string(StringUtils::format("BR%d", index + 1));
-						reversalBrickObj->setID(ids);
-						objMap[*ids] = reversalBrickObj;
+					{
+						if (reversalBrickPrototype == nullptr)
+						{
+							//创建颠倒砖块模板
+							data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+							ids = new std::string(StringUtils::format("BR%d", index + 1));
+							sprite = createSprite(1, data, "Image/Reversal_Brick3.png");
+							layer->addChild(sprite);
+							graphicsComponent = new GraphicsComponent(sprite);
+							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+							physicsComponent = new PhysicsComponent(body);
+							reversalBrickPrototype = new ReversalBrick(physicsComponent, graphicsComponent, ids, 3);
+							objMap[*ids] = reversalBrickPrototype;
+						}
+						else
+						{
+							//批量生产颠倒砖块模板
+							objSpawner = new ObjSpawner(reversalBrickPrototype);
+							ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
+							layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
+							reversalBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+							ids = new std::string(StringUtils::format("BR%d", index + 1));
+							reversalBrickObj->setID(ids);
+							objMap[*ids] = reversalBrickObj;
+						}
 						break;
 					}
 					default:
@@ -996,59 +1138,90 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 				}
 				index++;
 			}
-			else if (p[i].x == 0)
+			else if (p[i].x > 0)
 			{
 				tot++;
 				p[tot].x = p[i].x + 61.0f;
 				p[tot].y = p[i].y;
 				p[tot].cnt = p[i].cnt + 1;
-				
+
 				switch (p[tot].cnt)
 				{
-					case 2:
-					{	
-						if (upgradeBrickPrototype == nullptr)
-						{
-							//创建升级砖块模板
-							data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
-							ids = new std::string(StringUtils::format("BU%d", index + 1));
-							sprite = createSprite(1, data, "Image/Upgrade_Brick3.png");
-							layer->addChild(sprite);
-							graphicsComponent = new GraphicsComponent(sprite);
-							body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
-							physicsComponent = new PhysicsComponent(body);
-							upgradeBrickPrototype = new UpgradeBrick(physicsComponent, graphicsComponent, ids);
-							upgradeBrickPrototype->setHP(3);
-							objMap[*ids] = upgradeBrickPrototype;
-						}
-						else
-						{
-							//批量生产升级砖块
-							objSpawner = new ObjSpawner(upgradeBrickPrototype);
-							UpgradeBrick* upgradeBrick = (UpgradeBrick*)objSpawner->spawnEntity();
-							upgradeBrick->setPosition(b2Vec2(p[tot].x, p[tot].y));
-							layer->addChild(upgradeBrick->getGraphicsComponent()->getSprite());
-							ids = new std::string(StringUtils::format("BU%d", index + 1));
-							upgradeBrick->setID(ids);
-							objMap[*ids] = upgradeBrick;
-							break;
-						}
+				case 2:
+				{
+					if (upgradeBrickPrototype == nullptr)
+					{
+						//创建升级砖块模板
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BU%d", index + 1));
+						sprite = createSprite(1, data, "Image/Upgrade_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						upgradeBrickPrototype = new UpgradeBrick(physicsComponent, graphicsComponent, ids);
+						upgradeBrickPrototype->setHP(3);
+						objMap[*ids] = upgradeBrickPrototype;
 					}
-					case 3:
-					{	//批量生产镜像砖块
+					else
+					{
+						//批量生产升级砖块
+						objSpawner = new ObjSpawner(upgradeBrickPrototype);
+						UpgradeBrick* upgradeBrick = (UpgradeBrick*)objSpawner->spawnEntity();
+						upgradeBrick->setPosition(b2Vec2(p[tot].x, p[tot].y));
+						layer->addChild(upgradeBrick->getGraphicsComponent()->getSprite());
+						ids = new std::string(StringUtils::format("BU%d", index + 1));
+						upgradeBrick->setID(ids);
+						objMap[*ids] = upgradeBrick;
+						break;
+					}
+				}
+				case 3:
+				{
+					//创建镜像砖块模板
+					if (imageBrickPrototype == nullptr)
+					{
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BI%d", index + 1));
+						sprite = createSprite(1, data, "Image/Image_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						imageBrickPrototype = new ImageBrick(physicsComponent, graphicsComponent, ids, 3);
+						objMap[*ids] = imageBrickPrototype;
+					}
+					else
+					{
+						//批量生产镜像砖块
 						objSpawner = new ObjSpawner(imageBrickPrototype);
 						ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
 						imageBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
 						layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
 						ids = new std::string(StringUtils::format("BI%d", index + 1));
 						imageBrickObj->setID(ids);
-						imageBrickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Image_Brick2.png");
-						imageBrickObj->setHP(2);
 						objMap[*ids] = imageBrickObj;
-						break;
 					}
-					case 4:
-					{	//批量生产速度砖块
+					break;
+				}
+				case 4:
+				{
+					//创建加速砖块模板
+					if (accelerateBrickPrototype == nullptr)
+					{
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BA%d", index + 1));
+						sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						accelerateBrickPrototype = new AccelerateBrick(physicsComponent, graphicsComponent, ids, 3);
+						objMap[*ids] = accelerateBrickPrototype;
+					}
+					else
+					{
+						//批量生产速度砖块
 						objSpawner = new ObjSpawner(accelerateBrickPrototype);
 						AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
 						layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
@@ -1056,10 +1229,27 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 						ids = new std::string(StringUtils::format("BA%d", index + 1));
 						accelerateBrickObj->setID(ids);
 						objMap[*ids] = accelerateBrickObj;
-						break;
 					}
-					case 5:
-					{	//批量生产颠倒砖块模板
+					break;
+				}
+				case 5:
+				{
+					if (reversalBrickPrototype == nullptr)
+					{
+						//创建颠倒砖块模板
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BR%d", index + 1));
+						sprite = createSprite(1, data, "Image/Reversal_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						reversalBrickPrototype = new ReversalBrick(physicsComponent, graphicsComponent, ids, 3);
+						objMap[*ids] = reversalBrickPrototype;
+					}
+					else
+					{
+						//批量生产颠倒砖块模板
 						objSpawner = new ObjSpawner(reversalBrickPrototype);
 						ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
 						layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
@@ -1067,21 +1257,160 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 						ids = new std::string(StringUtils::format("BR%d", index + 1));
 						reversalBrickObj->setID(ids);
 						objMap[*ids] = reversalBrickObj;
+					}
+					break;
+				}
+				default:
+				{	//批量生产最高的普通转块
+					objSpawner = new ObjSpawner(brickObjPrototype);
+					brickObj = (BrickObj*)objSpawner->spawnEntity();
+					brickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+					layer->addChild(brickObj->getGraphicsComponent()->getSprite());
+					ids = new std::string(StringUtils::format("BH%d", index + 1));
+					brickObj->setID(ids);
+					brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Hard_Brick.png");
+					brickObj->setHP(1000000007);
+					objMap[*ids] = brickObj;
+					break;
+				}
+				}
+				index++;
+			}
+			else if (p[i].x == 0)
+			{
+				tot++;
+				p[tot].x = p[i].x + 61.0f;
+				p[tot].y = p[i].y;
+				p[tot].cnt = p[i].cnt + 1;
+
+				switch (p[tot].cnt)
+				{
+				case 2:
+				{
+					if (upgradeBrickPrototype == nullptr)
+					{
+						//创建升级砖块模板
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BU%d", index + 1));
+						sprite = createSprite(1, data, "Image/Upgrade_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						upgradeBrickPrototype = new UpgradeBrick(physicsComponent, graphicsComponent, ids);
+						upgradeBrickPrototype->setHP(3);
+						objMap[*ids] = upgradeBrickPrototype;
+					}
+					else
+					{
+						//批量生产升级砖块
+						objSpawner = new ObjSpawner(upgradeBrickPrototype);
+						UpgradeBrick* upgradeBrick = (UpgradeBrick*)objSpawner->spawnEntity();
+						upgradeBrick->setPosition(b2Vec2(p[tot].x, p[tot].y));
+						layer->addChild(upgradeBrick->getGraphicsComponent()->getSprite());
+						ids = new std::string(StringUtils::format("BU%d", index + 1));
+						upgradeBrick->setID(ids);
+						objMap[*ids] = upgradeBrick;
 						break;
 					}
-					default:
-					{	//批量生产最高的普通转块
-						objSpawner = new ObjSpawner(brickObjPrototype);
-						brickObj = (BrickObj*)objSpawner->spawnEntity();
-						brickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
-						layer->addChild(brickObj->getGraphicsComponent()->getSprite());
-						ids = new std::string(StringUtils::format("BH%d", index + 1));
-						brickObj->setID(ids);
-						brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Hard_Brick.png");
-						brickObj->setHP(1000000007);
-						objMap[*ids] = brickObj;
-						break;
+				}
+				case 3:
+				{
+					//创建镜像砖块模板
+					if (imageBrickPrototype == nullptr)
+					{
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BI%d", index + 1));
+						sprite = createSprite(1, data, "Image/Image_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						imageBrickPrototype = new ImageBrick(physicsComponent, graphicsComponent, ids, 3);
+						objMap[*ids] = imageBrickPrototype;
 					}
+					else
+					{
+						//批量生产镜像砖块
+						objSpawner = new ObjSpawner(imageBrickPrototype);
+						ImageBrick* imageBrickObj = (ImageBrick*)objSpawner->spawnEntity();
+						imageBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+						layer->addChild(imageBrickObj->getGraphicsComponent()->getSprite());
+						ids = new std::string(StringUtils::format("BI%d", index + 1));
+						imageBrickObj->setID(ids);
+						objMap[*ids] = imageBrickObj;
+					}
+					break;
+				}
+				case 4:
+				{
+					//创建加速砖块模板
+					if (accelerateBrickPrototype == nullptr)
+					{
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BA%d", index + 1));
+						sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						accelerateBrickPrototype = new AccelerateBrick(physicsComponent, graphicsComponent, ids, 3);
+						objMap[*ids] = accelerateBrickPrototype;
+					}
+					else
+					{
+						//批量生产速度砖块
+						objSpawner = new ObjSpawner(accelerateBrickPrototype);
+						AccelerateBrick* accelerateBrickObj = (AccelerateBrick*)objSpawner->spawnEntity();
+						layer->addChild(accelerateBrickObj->getGraphicsComponent()->getSprite());
+						accelerateBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+						ids = new std::string(StringUtils::format("BA%d", index + 1));
+						accelerateBrickObj->setID(ids);
+						objMap[*ids] = accelerateBrickObj;
+					}
+					break;
+				}
+				case 5:
+				{
+					if (reversalBrickPrototype == nullptr)
+					{
+						//创建颠倒砖块模板
+						data = new float[4]{ p[tot].x, p[tot].y, 30, 15 };
+						ids = new std::string(StringUtils::format("BR%d", index + 1));
+						sprite = createSprite(1, data, "Image/Reversal_Brick3.png");
+						layer->addChild(sprite);
+						graphicsComponent = new GraphicsComponent(sprite);
+						body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+						physicsComponent = new PhysicsComponent(body);
+						reversalBrickPrototype = new ReversalBrick(physicsComponent, graphicsComponent, ids, 3);
+						objMap[*ids] = reversalBrickPrototype;
+					}
+					else
+					{
+						//批量生产颠倒砖块模板
+						objSpawner = new ObjSpawner(reversalBrickPrototype);
+						ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
+						layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
+						reversalBrickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+						ids = new std::string(StringUtils::format("BR%d", index + 1));
+						reversalBrickObj->setID(ids);
+						objMap[*ids] = reversalBrickObj;
+					}
+					break;
+				}
+				default:
+				{	//批量生产最高的普通转块
+					objSpawner = new ObjSpawner(brickObjPrototype);
+					brickObj = (BrickObj*)objSpawner->spawnEntity();
+					brickObj->setPosition(b2Vec2(p[tot].x, p[tot].y));
+					layer->addChild(brickObj->getGraphicsComponent()->getSprite());
+					ids = new std::string(StringUtils::format("BH%d", index + 1));
+					brickObj->setID(ids);
+					brickObj->getGraphicsComponent()->getSprite()->setTexture("Image/Hard_Brick.png");
+					brickObj->setHP(1000000007);
+					objMap[*ids] = brickObj;
+					break;
+				}
 				}
 				index++;
 				tot++;
@@ -1158,7 +1487,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 				p[tot].x = p[i].x + 30.0f;
 				p[tot].y = p[i].y - 31.0f;
 				p[tot].cnt = p[i].cnt + 1;
-				
+
 				switch (p[tot].cnt)
 				{
 					case 2:
@@ -1227,7 +1556,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 				p[tot].x = p[i].x - 30.0f;
 				p[tot].y = p[i].y - 31.0f;
 				p[tot].cnt = p[i].cnt + 1;
-				
+
 				switch (p[tot].cnt)
 				{
 					case 2:
@@ -1266,7 +1595,8 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 						break;
 					}
 					case 5:
-					{	//批量生产颠倒砖块模板
+					{	
+						//批量生产颠倒砖块模板
 						objSpawner = new ObjSpawner(reversalBrickPrototype);
 						ReversalBrick* reversalBrickObj = (ReversalBrick*)objSpawner->spawnEntity();
 						layer->addChild(reversalBrickObj->getGraphicsComponent()->getSprite());
@@ -1365,6 +1695,7 @@ void ObjManager::createObj(int level, b2World* bWorld, GameLayer* Llayer)
 	}
 }
 
+
 MyMouseJoint* ObjManager::createMouseJoint(b2Vec2 target,float32 frequencyHz, float32 dampingRatio)
 {
 	MyMouseJoint* myMouseJoint= nullptr;
@@ -1373,61 +1704,6 @@ MyMouseJoint* ObjManager::createMouseJoint(b2Vec2 target,float32 frequencyHz, fl
 	return myMouseJoint;
 }
 
-
-void ObjManager::judgePack(char sid)
-{
-	switch(sid)
-	{
-		case 'L':
-		{
-			//resetLengthenPackList.push_back(*ids);
-			clearLengthenPackResetList();
-			break;
-		}
-		case 'S':
-		{
-			//resetShortenPackList.push_back(*ids);
-			clearShortenPackResetList();
-			break;
-		}
-		case 'A':
-		{
-			//resetAcceleratePackList.push_back(*ids);
-			clearAcceleratePackResetList();
-			break;
-		}
-		case 'D':
-		{
-			//resetDeacceleratePackList.push_back(*ids);
-			clearDeacceleratePackResetList();
-			break;
-		}
-		case 'R':
-		{
-			//resetReversalPackList.push_back(*ids);
-			clearReversalPackResetList();
-			break;
-		}
-		case 'I':
-		{
-			//resetImagePackList.push_back(*ids);
-			clearImagePackResetList();
-			break;
-		}
-		case 'F':
-		{
-			//resetPermeatPackList.push_back(*ids);
-			clearPermeatPackResetList();
-			break;
-		}
-		case 'U':
-		{
-			//resetUpgradePackList.push_back(*ids);
-			clearUpgradePackResetList();
-			break;
-		}
-	}
-}
 
 void ObjManager::updateTexture(char sid, std::string* ids)
 {
@@ -1448,9 +1724,8 @@ void ObjManager::addParticle2Delete(ParticleSystem* cps)
 
 void ObjManager::updateBall()
 {
-	if (ball->getPhysicsComponent()->getBody() == nullptr)
+	if (ball == nullptr)
 		return;
-
 	Size visibleSize = Director::getInstance()->getVisibleSize();    //获取可见区域尺寸
 	Point origin = Director::getInstance()->getVisibleOrigin();      //获取可见区域原点坐标
 
@@ -1473,9 +1748,9 @@ void ObjManager::updateBall()
 		//保证球体匀速运动
 		b2Vec2 vec1 = ball->getSpeed();
 		b2Vec2 vec2 = ball->getConstantSpeed();
-		float constantSpeed = sqrt(vec1.x*vec1.x + vec1.y*vec1.y);
-		float realSpeed = sqrt(vec2.x*vec2.x + vec2.y*vec2.y);
-		float ratio = realSpeed / constantSpeed;
+		float constantSpeed = sqrt(vec2.x*vec2.x + vec2.y*vec2.y);
+		float realSpeed = sqrt(vec1.x*vec1.x + vec1.y*vec1.y);
+		float ratio = constantSpeed / realSpeed;
 		vec1.x *= ratio;
 		vec1.y *= ratio;
 		ball->setSpeed(vec1);//设置实时速度
@@ -1494,9 +1769,13 @@ void ObjManager::updateBall()
 			angle = paddle->getPhysicsComponent()->getBody()->GetAngle();
 			vec = paddle->getPosition();
 		}
-		float fBallX = 0.0;										/*球与挡板的位置X偏移量*/
+		float fBallX = 0;										/*球与挡板的位置X偏移量*/
 		float fBallY = ball->getRadius() + paddle->getHeight();	/*球与挡板的位置Y偏移量*/
-		ball->setPosition(b2Vec2(vec.x * pixToMeter + fBallX, vec.y * pixToMeter + fBallY));
+		dSp->setPosition(
+			Point(origin.x + visibleSize.width / 2 + vec.x * pixToMeter,
+				origin.y + visibleSize.height / 2 + vec.y * pixToMeter + fBallY));
+		
+		body->SetTransform(b2Vec2(vec.x,vec.y + paddle->getHeight()), 0);
 
 		//保证球体静止
 		ball->setSpeed(b2Vec2(0, 0));//设置实时速度
@@ -1517,8 +1796,62 @@ void ObjManager::updatePaddle()
 
 	b2Body* body = paddle->getPhysicsComponent()->getBody();
 	Sprite* dSp = paddle->getGraphicsComponent()->getSprite();
-	b2Body* imgBody = imgPaddle->getPhysicsComponent()->getBody();
-	Sprite* imgDsp = imgPaddle->getGraphicsComponent()->getSprite();
+	
+
+
+	if (imgPaddle != nullptr)
+	{
+		b2Body* imgBody = imgPaddle->getPhysicsComponent()->getBody();
+		Sprite* imgDsp = imgPaddle->getGraphicsComponent()->getSprite();
+		if (imgBody != nullptr)//控制副本挡板的方法
+		{
+			//设置位置
+			b2Vec2 position = imgPaddle->getPosition();
+			float angle = imgBody->GetAngle();
+			if (imgDsp != nullptr)
+			{
+				imgDsp->setPosition(
+					Point(origin.x + visibleSize.width / 2 + position.x * pixToMeter,
+						origin.y + visibleSize.height / 2 + position.y * pixToMeter));
+				imgDsp->setRotation(-angle*180.0 / 3.1415926);
+			}
+
+			//设置速度
+			//imgBody->ApplyForce(b2Vec2(0.0f, 3.0f*paddle->getPhysicsComponent()->getMass()), paddle->getPhysicsComponent()->getWorldCenter(), true);
+			if (vline.x == -1.0f || vline.x == 1.0f)
+			{
+				vline.y = 0;
+				if (vline.x == -1.0f)
+				{
+					vline.x = 55000.0f*paddle->getPhysicsComponent()->getMass();
+					imgPaddle->setSpeed(vline);
+				}
+				else if (vline.x == 1.0f)
+				{
+					vline.x = -55000.0f*paddle->getPhysicsComponent()->getMass();
+					imgPaddle->setSpeed(vline);
+				}
+			}
+			if (position.x * pixToMeter > (512 - paddle->getWidth())) //移出界外
+			{
+				vline.y = 0;
+				vline.x = -55000.0f*paddle->getPhysicsComponent()->getMass();
+				imgPaddle->setSpeed(vline);
+			}
+			else if (position.x * pixToMeter < -(512 - paddle->getWidth())) //移出界外
+			{
+				vline.y = 0;
+				vline.x = 55000.0f*paddle->getPhysicsComponent()->getMass();
+				imgPaddle->setSpeed(vline);
+			}
+			else //界内
+			{
+				vline.y = 0;
+				vline.x = -vline.x;
+				imgPaddle->setSpeed(vline);
+			}
+		}
+	}
 
 	//设置位置
 	if (body != nullptr)
@@ -1534,66 +1867,23 @@ void ObjManager::updatePaddle()
 		}
 	}
 
-	if (imgBody != nullptr)//控制副本挡板的方法
-	{
-		//设置位置
-		b2Vec2 position = imgPaddle->getPosition();
-		float angle = imgBody->GetAngle();
-		if (imgDsp != NULL)
-		{
-			imgDsp->setPosition(
-				Point(origin.x + visibleSize.width / 2 + position.x * pixToMeter,
-					origin.y + visibleSize.height / 2 + position.y * pixToMeter));
-			imgDsp->setRotation(-angle*180.0 / 3.1415926);
-		}
-
-		//设置速度
-		imgBody->ApplyForce(b2Vec2(0.0f, 3.0f*paddle->getPhysicsComponent()->getMass()), paddle->getPhysicsComponent()->getWorldCenter(), true);
-		if (vline.x == -1.0f || vline.x == 1.0f)
-		{
-			vline.y = 0;
-			if (vline.x == -1.0f)
-			{
-				vline.x = 55000.0f*paddle->getPhysicsComponent()->getMass();
-				imgPaddle->setSpeed(vline);
-			}
-			else if (vline.x == 1.0f)
-			{
-				vline.x = -55000.0f*paddle->getPhysicsComponent()->getMass();
-				imgPaddle->setSpeed(vline);
-			}
-		}
-		if (position.x * pixToMeter > (512 - paddle->getWidth())) //移出界外
-		{
-			vline.y = 0;
-			vline.x = -55000.0f*paddle->getPhysicsComponent()->getMass();
-			imgPaddle->setSpeed(vline);
-		}
-		else if (position.x * pixToMeter < -(512 - paddle->getWidth())) //移出界外
-		{
-			vline.y = 0;
-			vline.x = 55000.0f*paddle->getPhysicsComponent()->getMass();
-			imgPaddle->setSpeed(vline);
-		}
-		else //界内
-		{
-			vline.y = 0;
-			vline.x = -vline.x;
-			imgPaddle->setSpeed(vline);
-		}
-	}
 }
 
-void ObjManager::updateBrickObj(std::string* ids, b2Contact* contact)
+void ObjManager::updateBrickObj(std::string* ids, b2Contact* contact, int attack)
 {
+	if (ids->at(1) == 'T')
+	{
+		transmitBrickWork();
+		return;
+	}
 	BrickObj* brick = (BrickObj*)objMap[*ids];
-	int HP = brick->getHP() -  ball->getAttack();//让砖块的生命值减去球的攻击力
+	int HP = brick->getHP() - attack;//让砖块的生命值减去球的攻击力
 	if (HP <= 0)
 	{
 		addObj2Delete(*ids);
 		b2Filter filter;
 		filter.categoryBits = 0;
-		contact->GetFixtureB()->SetFilterData(filter);
+		contact->GetFixtureA()->SetFilterData(filter);
 	}
 	else
 	{
@@ -1618,19 +1908,20 @@ void ObjManager::updateObj()
 	{
 		EntityObj* po = iter->second;
 		
+		if (po == nullptr||po->getPhysicsComponent()->getBody() == nullptr)
+		{
+			//addObj2Delete(po->getID()->c_str());
+			continue;
+		}
+
 		if (po->getID()->at(0) == 'Q' || po->getID()->at(0) == 'P') //球与挡板不在此更新
 			continue;
 		
-		if (po == nullptr)
-		{
-			addObj2Delete(po->getID()->c_str());
-			continue;
-		}
 		
 		b2Body* body =po->getPhysicsComponent()->getBody();
 		Sprite* dSp = po->getGraphicsComponent()->getSprite();
 		
-		if (body != nullptr)
+		if (body)
 		{
 			b2Vec2 position = body->GetPosition();
 			if (position.y * pixToMeter < -405.0 && po != ball)
@@ -1674,11 +1965,6 @@ void ObjManager::deleteObj()
 		if (po->getID()->at(0) == 'B')
 		{
 			b2Vec2 vec = po->getPosition();
-			if (po->getID()->at(1) == 'T')//传送砖块
-			{
-				transmitBrickWork();
-				continue;
-			}
 			//砖块消失的粒子效果
 			auto explosion = ParticleFire::create();
 			explosion->setPosition(Vec2(origin.x + visibleSize.width / 2 + vec.x * pixToMeter,
@@ -1698,27 +1984,13 @@ void ObjManager::deleteObj()
 				{
 					ptr_func2 pFun = it->second;
 					if (pFun)
-						(this->*pFun)(vec);
+						(this->*pFun)(b2Vec2(vec.x * pixToMeter , vec.y * pixToMeter));
 				}
-				continue;
 			}
 			if (po->getID()->at(1) != 'H')				//更新砖块总数
 				brickCount--;
 		}	
-		else//待销毁物体为包裹
-		{
-			std::map<char, ptr_func1>::iterator it = packWorkFuncMap.find(po->getID()->at(1));
-			if (it != packWorkFuncMap.end())
-			{
-				ptr_func1 pFun = it->second;
-				if (pFun)
-					(this->*pFun)();
-			}
-			if ((po->getID()->at(0) == 'A') && (po->getID()->at(1) != 'S'))	//除粘黏包裹外均放入还原倒计时
-			{
-				//judgePack(po->getID()->at(1), new string(po->getID()->c_str()));
-			}
-		}	
+
 		//销毁物体
 		layer->removeChild(po->getGraphicsComponent()->getSprite(), true);	//在布景里删除物体类对象中自己的精灵	
 		world->DestroyBody(po->getPhysicsComponent()->getBody());			//在物理世界里删除物体类对象中自己的刚体
@@ -1733,7 +2005,7 @@ void ObjManager::deleteObj()
 		}
 	}
 	deleteObjList.clear();
-
+	deleteParticle();
 }
 
 void ObjManager::deleteParticle()
@@ -1743,6 +2015,8 @@ void ObjManager::deleteParticle()
 	std::vector<ParticleSystem*>::iterator il;
 	il = deleteParticleList.begin();
 	layer->removeChild(*il);
+	deleteParticleList.erase(il);
+	
 }
 
 void ObjManager::clearImagePackResetList()
@@ -1752,7 +2026,9 @@ void ObjManager::clearImagePackResetList()
 	imgPackReset();
 	std::vector<std::string>::iterator il;
 	for (il = resetImagePackList.begin(); il != resetImagePackList.end(); il++)
+	{
 		objMap.erase(*il);
+	}
 	resetImagePackList.clear();
 }
 
@@ -1802,6 +2078,17 @@ void ObjManager::clearReversalPackResetList()
 
 void ObjManager::clearAcceleratePackResetList()
 {
+	if (resetAcceleratePackList.empty())
+		return;
+	deacceleratePackReset();
+	std::vector<std::string>::iterator il;
+	for (il = resetAcceleratePackList.begin(); il != resetAcceleratePackList.end(); il++)
+		objMap.erase(*il);
+	resetAcceleratePackList.clear();
+}
+
+void ObjManager::clearDeacceleratePackResetList()
+{
 	if (resetDeacceleratePackList.empty())
 		return;
 	deacceleratePackReset();
@@ -1809,17 +2096,6 @@ void ObjManager::clearAcceleratePackResetList()
 	for (il = resetDeacceleratePackList.begin(); il != resetDeacceleratePackList.end(); il++)
 		objMap.erase(*il);
 	resetDeacceleratePackList.clear();
-}
-
-void ObjManager::clearDeacceleratePackResetList()
-{
-	if (resetAcceleratePackList.empty())
-		return;
-	acceleratePackReset();
-	std::vector<std::string>::iterator il;
-	for (il = resetAcceleratePackList.begin(); il != resetAcceleratePackList.end(); il++)
-		objMap.erase(*il);
-	resetAcceleratePackList.clear();
 }
 
 void ObjManager::clearUpgradePackResetList()
@@ -1840,7 +2116,7 @@ void ObjManager::imgBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1,data, "Image/Image_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	ImagePack* pack = new ImagePack(physicsComponent, graphicsComponent, ids);
 
@@ -1856,6 +2132,7 @@ void ObjManager::imgPackWork()
 	paddle->setImage(true);
 	if (paddle->getReversal() == true)
 	{
+		//让原本隐藏的挡板显现出来
 		Sprite* dSp = paddle->getGraphicsComponent()->getSprite();
 		b2Body* body = paddle->getPhysicsComponent()->getBody();
 
@@ -1874,8 +2151,17 @@ void ObjManager::imgPackWork()
 	}
 	else
 	{
+		//创建镜像挡板
 		imgPaddle = (PaddleObj*)paddle->Clone();
+		imgPaddle->setID(new std::string(StringUtils::format("P%d", 1)));
 		layer->addChild(imgPaddle->getGraphicsComponent()->getSprite());
+		Sprite* dSp = imgPaddle->getGraphicsComponent()->getSprite();
+		b2Body* body = imgPaddle->getPhysicsComponent()->getBody();
+		b2Filter filter;
+		filter.groupIndex = 2;
+		filter.categoryBits = 2;
+		filter.maskBits = 4;
+		body->GetFixtureList()->SetFilterData(filter);
 	}
 }
 
@@ -1907,10 +2193,10 @@ void ObjManager::lengthenBrickWork(b2Vec2 pos)
 	std::string* ids = new std::string(StringUtils::format("AL%d", ++acceleratePackIndex));
 	float* data = new float[4]{ pos.x, pos.y, 12.0, 12.0 };
 
-	Sprite* sprite = createSprite(1, data, "Image / Lengthen_Shorten_Pack.png");
+	Sprite* sprite = createSprite(1, data, "Image/Lengthen_Shorten_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	LengthenPack* pack = new LengthenPack(physicsComponent, graphicsComponent, ids);
 
@@ -1931,8 +2217,8 @@ void ObjManager::lengthenPackReset()
 
 void ObjManager::lengthenPackWork()
 {
-	
-	if (paddle->getWidth() * 1.2f > 1024)
+	float width = 0.0f;
+	if (paddle->getWidth() * 2.4f > 1024)
 		return;
 	paddle->setWidth(paddle->getWidth() * 1.3f);
 
@@ -1949,7 +2235,7 @@ void ObjManager::permeatBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1, data, "Image/Fast_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	PermeatPack* pack = new PermeatPack(physicsComponent, graphicsComponent, ids);
 
@@ -1974,6 +2260,7 @@ void ObjManager::permeatPackReset()
 	cps->setScale(0.8);
 	cps->setLife(0.06f);//每个粒子生命周期
 	layer->addChild(cps);//加到精灵图
+	ball->setParticle(cps);
 }
 
 void ObjManager::permeatPackWork()
@@ -1985,9 +2272,13 @@ void ObjManager::permeatPackWork()
 
 	ball->setPermeat(true);
 	addParticle2Delete(ball->getParticle());
-	
-	ParticleSystem * particle = createParticle(1.0, 0.06f,Vec2(0,0));
-	layer->addChild(particle);//加到精灵图
+	ParticleSystem * particles = ParticleSun::create();
+	particles->retain();
+	particles->setScale(1.0);
+	particles->setPosition(ccp(ball->getPosition().x * pixToMeter, ball->getPosition().y* pixToMeter));//位置
+	particles->setLife(0.06f);//每个粒子生命周期
+	layer->addChild(particles);//加到精灵图
+	ball->setParticle(particles);
 }
 
 void ObjManager::reversalBrickWork(b2Vec2 pos)
@@ -1997,7 +2288,7 @@ void ObjManager::reversalBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1, data, "Image/Reversal_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	
 	ReversalPack* pack = new ReversalPack(physicsComponent, graphicsComponent, ids);
@@ -2064,9 +2355,15 @@ void ObjManager::reversalPackWork()
 	else
 	{
 		imgPaddle = (PaddleObj*)paddle->Clone();
+		imgPaddle->setID(new std::string(StringUtils::format("P%d", 1)));
 		layer->addChild(imgPaddle->getGraphicsComponent()->getSprite());
+		
+		//原挡板隐藏,刚体设为可穿透
 		Texture2D* texture = CCTextureCache::sharedTextureCache()->addImage("Image/empty.png");
-		imgPaddle->setTexture(texture);
+		paddle->setTexture(texture);
+		b2Filter filter;
+		filter.categoryBits = 0;
+		paddle->getPhysicsComponent()->getBody()->GetFixtureList()->SetFilterData(filter);
 	}
 }
 
@@ -2077,7 +2374,7 @@ void ObjManager::accelerateBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	AcceleratePack* pack = new AcceleratePack(physicsComponent, graphicsComponent, ids);
 
@@ -2088,8 +2385,18 @@ void ObjManager::accelerateBrickWork(b2Vec2 pos)
 
 void ObjManager::acceleratePackReset()
 {
-	if(ball != nullptr)
-		ball->setSpeed(ball->getInitialSpeed());
+	if (ball != nullptr)
+	{
+		b2Vec2 vec1 = ball->getSpeed();
+		b2Vec2 vec2 = ball->getInitialSpeed();
+		float initialSpeed = sqrt(vec2.x*vec2.x + vec2.y*vec2.y);
+		float realSpeed = sqrt(vec1.x*vec1.x + vec1.y*vec1.y);
+		float ratio = initialSpeed / realSpeed;
+		vec1.x *= ratio;
+		vec1.y *= ratio;
+		ball->setSpeed(vec1);
+		ball->setConstantSpeed(vec1);
+	}
 }
 
 void ObjManager::acceleratePackWork()
@@ -2105,7 +2412,7 @@ void ObjManager::stickyBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1, data, "Image/Sticky_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	StickyPack* pack = new StickyPack(physicsComponent, graphicsComponent, ids);
 
@@ -2126,15 +2433,21 @@ void ObjManager::stickyPackWork()
 
 	//克隆当前球体
 	BallObj* newBall = (BallObj*)ball->Clone();
-	layer->addChild(newBall->getGraphicsComponent()->getSprite());
+	newBall->setPermeat(false);
+	newBall->setAttack(1);
+	newBall->setSpeedState(Normal);
 
 	//就地删除原球体
 	objMap.erase(*ball->getID());
 	layer->removeChild(ball->getGraphicsComponent()->getSprite());
+	layer->removeChild(ball->getGraphicsComponent()->getParticle());
 	world->DestroyBody(ball->getPhysicsComponent()->getBody());
 	delete ball;
 	ball = nullptr;
 	
+	layer->addChild(newBall->getGraphicsComponent()->getSprite());
+	layer->addChild(newBall->getGraphicsComponent()->getParticle());
+
 	//将当前球体加入待删除物体队列
 	//addObj2Delete(ball->getID()->c_str());
 	
@@ -2145,12 +2458,16 @@ void ObjManager::stickyPackWork()
 		vec = paddle->getPosition();
 	
 	newBall->setPosition(b2Vec2(vec.x * pixToMeter + fBallX, vec.y * pixToMeter + fBallY));
+	newBall->getGraphicsComponent()->getSprite()->setPosition(Vec2(vec.x * pixToMeter + fBallX, vec.y * pixToMeter + fBallY));
+	newBall->getGraphicsComponent()->getParticle()->setPosition(Vec2(newBall->getPosition().x,newBall->getPosition().y));
 	string* ids = new std::string(StringUtils::format("Q%d", ++ballObjIndex));
 	newBall->setID(ids);
-	objMap[*ids] = newBall;
-	
 	//将球体指针指向新球体
 	ball = newBall;
+	
+	objMap[*ids] = newBall;
+	
+	
 }
 
 void ObjManager::transmitBrickWork()
@@ -2162,7 +2479,7 @@ void ObjManager::transmitBrickWork()
 	for (int i = 1; i <= transmitBrickIndex; i++)
 	{
 		ids = std::string(StringUtils::format("BT%d", i));
-		EntityObj* po = objMap[ids];
+		TransmitBrick* po = (TransmitBrick*)objMap[ids];
 		b2Vec2 pos = po->getPosition();
 		float d1 = sqrt((position.x - pos.x) * (position.x - pos.x) + (position.y - pos.y) * (position.y - pos.y));
 		if (d1 < d)
@@ -2178,11 +2495,11 @@ void ObjManager::transmitBrickWork()
 		cnt = rand() % transmitBrickIndex + 1;
 	}
 	ids = std::string(StringUtils::format("BT%d", cnt));
-	EntityObj* po = objMap[ids];
+	TransmitBrick* po = (TransmitBrick*)objMap[ids];
 	b2Vec2 pos = po->getPosition();
-	pos.y -= ((15 + ball->getRadius()) / pixToMeter);
+	pos.y -= ((15 + Ball::radius) / pixToMeter);
 	ball->setSpeed(b2Vec2(0.0f, -abs(sqrt(ball->getSpeed().x * ball->getSpeed().x + ball->getSpeed().y * ball->getSpeed().y))));
-	ball->setPosition(pos);
+	ball->setPosition(b2Vec2(pos.x * pixToMeter, pos.y*pixToMeter));
 }
 
 void ObjManager::upgradeBrickWork(b2Vec2 pos)
@@ -2192,7 +2509,7 @@ void ObjManager::upgradeBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1, data, "Image/Upgrade_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	UpgradePack* pack = new UpgradePack(physicsComponent, graphicsComponent, ids);
 
@@ -2237,7 +2554,7 @@ void ObjManager::deaccelerateBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1, data, "Image/Accelerate_Decelerate_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	DeacceleratePack* pack = new DeacceleratePack(physicsComponent, graphicsComponent, ids);
 
@@ -2249,7 +2566,17 @@ void ObjManager::deaccelerateBrickWork(b2Vec2 pos)
 void ObjManager::deacceleratePackReset()
 {
 	if (ball != nullptr)
-		ball->setSpeed(ball->getInitialSpeed());
+	{
+		b2Vec2 vec1 = ball->getSpeed();
+		b2Vec2 vec2 = ball->getInitialSpeed();
+		float initialSpeed = sqrt(vec2.x*vec2.x + vec2.y*vec2.y);
+		float realSpeed = sqrt(vec1.x*vec1.x + vec1.y*vec1.y);
+		float ratio = initialSpeed / realSpeed;
+		vec1.x *= ratio;
+		vec1.y *= ratio;
+		ball->setSpeed(vec1);
+		ball->setConstantSpeed(vec1);
+	}
 }
 
 void ObjManager::deacceleratePackWork()
@@ -2265,7 +2592,7 @@ void ObjManager::shortenBrickWork(b2Vec2 pos)
 	Sprite* sprite = createSprite(1, data, "Image/Lengthen_Shorten_Pack.png");
 	layer->addChild(sprite);
 	GraphicsComponent* graphicsComponent = new GraphicsComponent(sprite);
-	b2Body* body = createBody(0, 1, ids, world, data, 1, 0.0f, 1.0f, 2, 4, 2);
+	b2Body* body = createBody(1, 1, ids, world, data, 1, 0.0f, 1.0f, -1, 4, 2);
 	PhysicsComponent* physicsComponent = new PhysicsComponent(body);
 	ShortenPack* pack = new ShortenPack(physicsComponent, graphicsComponent, ids);
 
@@ -2314,9 +2641,10 @@ void ObjManager::shootBall()
 	b2Vec2 vec = paddle->getPosition();
 	if (paddle->getReversal() == true)
 		vec = imgPaddle->getPosition();
-	b2Vec2 vLine(0.0, Ball::s_speed);
+	b2Vec2 vLine(0.0, 25 + (layer->getLevel() - 1)*4.0f);
 	ball->setConstantSpeed(vLine);
 	ball->setInitialSpeed(vLine);
+	ball->setSpeed(vLine);
 }
 
 void ObjManager::setPaddleVelocity(b2Vec2 Speed)
@@ -2329,7 +2657,64 @@ Sprite* ObjManager::getPaddleSprite() const
 	return paddle->getGraphicsComponent()->getSprite();
 }
 
+void ObjManager::packWork(char sid)
+{
+	std::map<char, ptr_func1>::iterator it = packWorkFuncMap.find(sid);
+	if (it != packWorkFuncMap.end())
+	{
+		ptr_func1 pFun = it->second;
+		if (pFun)
+			(this->*pFun)();
+	}
+}
 
+
+void ObjManager::addPack2Reset(char sid, std::string* ids)
+{
+	switch (sid)
+	{
+		case 'L':
+		{
+			resetLengthenPackList.push_back(*ids);
+			break;
+		}
+		case 'S':
+		{
+			resetShortenPackList.push_back(*ids);
+			break;
+		}
+		case 'A':
+		{
+			resetAcceleratePackList.push_back(*ids);
+			break;
+		}
+		case 'D':
+		{
+			resetDeacceleratePackList.push_back(*ids);
+			break;
+		}
+		case 'R':
+		{
+			resetReversalPackList.push_back(*ids);
+			break;
+		}
+		case 'I':
+		{
+			resetImagePackList.push_back(*ids);
+			break;
+		}
+		case 'F':
+		{
+			resetPermeatPackList.push_back(*ids);
+			break;
+		}
+		case 'U':
+		{
+			resetUpgradePackList.push_back(*ids);
+			break;
+		}
+	}
+}
 
 
 

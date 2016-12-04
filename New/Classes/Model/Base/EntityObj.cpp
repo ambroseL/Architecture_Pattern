@@ -53,14 +53,14 @@ const float EntityObj::getHeight()
 void EntityObj::setWidth(float fWidth)									
 {
 	this->graphicsComponent->setWidth(fWidth);
-	this->physicsComponent->setSize(fWidth, this->getGraphicsComponent()->getSprite()->getContentSize().height);
+	this->physicsComponent->setSize(fWidth, this->getHeight());
 
 }
 
 void EntityObj::setHeight(float fHeight)								
 {
 	this->graphicsComponent->setHeight(fHeight);
-	this->physicsComponent->setSize(this->getGraphicsComponent()->getSprite()->getContentSize().width, fHeight);
+	this->physicsComponent->setSize(this->getWidth(), fHeight);
 }
 
 const b2Vec2 EntityObj::getSpeed()
@@ -102,6 +102,7 @@ const std::string* EntityObj::getID()
 void EntityObj::setID(std::string* id)
 {
 	this->id = id;
+	this->getPhysicsComponent()->getBody()->SetUserData(id);
 }
 
 b2Vec2 EntityObj::getPosition()
@@ -112,7 +113,6 @@ b2Vec2 EntityObj::getPosition()
 void EntityObj::setPosition(b2Vec2 pos)
 {
 	physicsComponent->setPosition(pos);
-	graphicsComponent->setPosition(Point(pos.x,pos.y));
 }
 
 void EntityObj::setTexture(Texture2D* texture)

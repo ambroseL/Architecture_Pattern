@@ -18,5 +18,6 @@ public:
 	void reStart3();//第三关重新开始的方法
 	void goStartScene();//回欢迎场景的方法
 	void goHelpScene();//去帮助场景
+	Scene* getStartScene() const { return startScene; }
 };
 #endif

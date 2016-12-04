@@ -134,12 +134,8 @@ cocos2d::Sprite* createSprite(int shape, float* data, std::string pic)
 
 cocos2d::Sprite* copySprite(cocos2d::Sprite* sprite)
 {
-
-	cocos2d::Sprite* dSp = nullptr;
-	dSp->setTexture(sprite->getTexture());               //创建精灵
-	//layer->addChild(dSp, 1);                           //将精灵添加到布景，需通过控制类调用场景类
-	//dSp->getContentSize();
-	dSp->setScale(sprite->getScale());					 //设置缩放比	
+	cocos2d::Sprite* dSp = sprite->createWithSpriteFrame(sprite->getSpriteFrame());
+	dSp->setScale(sprite->getScaleX(),sprite->getScaleY());
 	return dSp;
 }
 
@@ -155,12 +151,13 @@ cocos2d::ParticleSystem* createParticle(float fScale, float lifeCircle, cocos2d:
 
 cocos2d::ParticleSystem* copyParticle(cocos2d::ParticleSystem* particle)
 {
+	if (particle == nullptr)
+		return nullptr;
 	cocos2d::ParticleSystem* cps = cocos2d::ParticleMeteor::create();
 	cps->retain();
 	cps->setScale(particle->getScale());
 	cps->setPosition(particle->getPosition());//位置
 	cps->setLife(particle->getLife());//每个粒子生命周期
-	//layer->addChild(cps);//加到精灵图
 	return cps;
 }
 

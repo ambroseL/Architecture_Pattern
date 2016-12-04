@@ -65,12 +65,12 @@ void PaddleObj::setSticky(bool bSticky)
 
 const float PaddleObj::getInitialHeight()
 {
-	return this->sHeight * 2;
+	return this->sHeight;
 }
 
 const float PaddleObj::getInitialWidth()
 {
-	return this->sWidth * 2;
+	return this->sWidth;
 }
 
 //==============ÀàµÄ²Ù×÷ =====================

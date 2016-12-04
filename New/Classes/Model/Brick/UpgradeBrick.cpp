@@ -17,3 +17,8 @@ BrickObj(physicsComponent, graphicsComponent, id, iHP)
 UpgradeBrick::~UpgradeBrick()
 {
 }// UpgradeBrick
+
+EntityObj* UpgradeBrick::Clone()
+{
+	return new UpgradeBrick(physicsComponent->Clone(), graphicsComponent->Clone(), new std::string(id->c_str()), HP);
+}

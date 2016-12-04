@@ -7,7 +7,21 @@
 #include "SceneManager.h"
 
 using namespace cocos2d;
-
+/**
+* 主游戏场景类
+*
+*#include "cocos2d.h"
+*#include "Box2D/Dynamics/b2World.h"
+*#include "Joints.h"
+*#include "SceneManager.h"
+*-llib
+*
+*游戏的主场景，所有按钮及物体均为layer的child
+*场景将定时调用更新函数以渲染游戏画面
+*与逻辑相关的操作均以delegate的形式交给场景控制类处理
+*
+* @seesomething
+*/
 extern class GameManager;
 
 class GameLayer: public Layer
@@ -21,7 +35,7 @@ class GameLayer: public Layer
 	Sprite* transparentBackgroundSp;//透明背景精灵
 	Sprite* PauseSp;//暂停时弹出的木板
 
-	int level;
+	int level = 1;
 
 	public:
 	
@@ -81,8 +95,19 @@ class GameLayer: public Layer
 	//处理还原包裹
 	void resetPack(float32 delta);
 
-	//检查待还原队列
-	void checkResetList();
+	//delegate给gamemanager的包裹还原函数
+	void resetLengthenPack(float delta);
+	void resetShortenPack(float delta);
+	void resetAcceleratePack(float delta);
+	void resetDeacceleratePack(float delta);
+	void resetReversalPack(float delta);
+	void resetImagePack(float delta);
+	void resetPermeatPack(float delta);
+	void resetUpgradePack(float delta);
+
+	//设置包裹还原函数的定时器
+	void setPackresetschedule(char sid);
+
 
 	//播放碰撞时的音效
 	void playSound();
@@ -90,11 +115,17 @@ class GameLayer: public Layer
 	//获取当前关卡等级
 	int getLevel() const { return level; }
 
+	//设置当前关卡等级
 	void setLevel(const int& level)  { this->level = level; }
 
+	//设置当前的场景控制管理类
 	void setSceneManager(SceneManager* sceneManager) { this->sceneManager = sceneManager; }
 
+	//获取当前的场景控制管理类
 	SceneManager* getSceneManager() const { return this->sceneManager; }
+
+	//创建场景内的砖块
+	void createBricks();
 																	 
 	CREATE_FUNC(GameLayer);//Cocos2d-x中定义的一个宏，创建指定类型的对象,并做好相应的初始化与释放工作
 };

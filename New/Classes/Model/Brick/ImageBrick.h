@@ -36,5 +36,10 @@ public:
 	*析构函数
 	*/
 	~ImageBrick();
+	
+	/**
+	*克隆函数
+	*/
+	EntityObj* Clone() override;
 };
 #endif

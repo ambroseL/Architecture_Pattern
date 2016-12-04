@@ -38,6 +38,11 @@ public:
 	*析构函数
 	*/
 	~UpgradeBrick();
+
+	/**
+	*克隆函数，深拷贝
+	*/
+	EntityObj* Clone() override;
 };
 
 #endif

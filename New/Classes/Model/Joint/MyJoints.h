@@ -25,6 +25,8 @@ public:
 	
 	// 类的生命周期控制函数，包括构造和析构	
 
+		MyMouseJoint():mJoint(nullptr),mWorld(nullptr){}
+
 	  /**
 	  *含参构造函数
 	  *@id 关节id
@@ -50,6 +52,7 @@ public:
 		bool collideConnected = true
 	);
 
+	
 	/**
 	*析构函数
 	*/

@@ -6,6 +6,7 @@
 #include "PaddleObj.h"
 #include "MyJoints.h"
 #include "WallObj.h"
+#include "GameLayer.h"
 //#include "GameLayer.h"
 
 using namespace cocos2d;
@@ -20,8 +21,6 @@ using namespace cocos2d;
 *
 * @seesomething
 */
-
-extern class GameLayer;
 
 class ObjManager
 {
@@ -43,21 +42,24 @@ public:
 	*/
 	~ObjManager();
 
-	/**
-	*初始化函数
-	*/
-	void init();
 
 	//类操作
 
+	/**
+	*创建物体
+	*@parameter world 关卡所在物理世界
+	*@parameter layer 关卡所在图层
+	*/
+	void createObj(b2World* bWorld, GameLayer* Llayer);
+	
 	/**
 	*创建物体
 	*@parameter level 关卡等级
 	*@parameter world 关卡所在物理世界
 	*@parameter layer 关卡所在图层
 	*/
-	void createObj(int level, b2World* bWorld, GameLayer* Llayer);
-	
+	void createBricks(b2World* bWorld, GameLayer* Llayer);
+
 
 	/**
 	*创建鼠标关节
@@ -66,6 +68,9 @@ public:
 	*@dampingRatio 阻尼	0-10.7f
 	*/
 	MyMouseJoint* createMouseJoint( b2Vec2 target, float32 frequencyHz, float32 dampingRatio);
+
+
+	void addPack2Reset(char sid, std::string* ids);
 
 	/**
 	*将物体加入待删除物体列表
@@ -107,7 +112,7 @@ public:
 	/**
 	*更新指定的砖块
 	*/
-	void updateBrickObj(std::string* ids, b2Contact* contact);
+	void updateBrickObj(std::string* ids, b2Contact* contact, int attack);
 
 	/**
 	*更新砖块贴图
@@ -115,16 +120,11 @@ public:
 	*@ids 砖块ID
 	*/
 	void updateTexture(char sid, std::string* ids);
-	
-	/**
-	*调用对应的包裹还原函数
-	*@sid 包裹类型
-	*@ids 包裹ID
-	*/
-	void judgePack(char sid);
 
 	//砖块效果函数
 	
+	void packWork(char sid);
+
 	/**
 	*镜像
 	*/
@@ -302,6 +302,8 @@ public:
 
 	float getPaddleInitialWidth() const { return paddle->getInitialWidth(); }
 
+	float getPaddleInitialHeight() const { return paddle->getInitialHeight(); }
+
 	/**
 	*获取挡板的精灵
 	*/
@@ -315,6 +317,7 @@ public:
 
 	void setBallSpeed(const b2Vec2& speed) { ball->setSpeed(speed); }
 
+	bool isEmpty() { return deleteObjList.empty(); }
 
 private:
 

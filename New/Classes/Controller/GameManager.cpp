@@ -7,7 +7,6 @@ GameManager::GameManager():mj(nullptr), layer(nullptr),objManager(nullptr),scene
 	keyright = false;
 	keyleft = false;
 	HP = 2;
-	brickcount = 1;
 }
 
 GameManager::~GameManager()
@@ -17,16 +16,20 @@ GameManager::~GameManager()
 void GameManager::init()
 {	
 	objManager = new ObjManager();
-	objManager->init();
-	//eventHaneler->init();
-	//eventHandler->setObjManager(objManager);		
+	UIcontroller = new UIController();
+	sceneManager = new SceneManager();
 }
 
-void GameManager::createLayerObj(GameLayer* layer, b2World* world)
+void GameManager::initLayer(GameLayer* layer, b2World* world)
 {
 	this->layer = layer;
-	objManager->createObj(layer->getLevel(), world, layer);
+	objManager->createObj(world, layer);
 	UIcontroller->setLayer(layer);
+}
+
+void GameManager::createLayerBricks(GameLayer* layer, b2World* world)
+{
+	objManager->createBricks(world, layer);
 }
 
 
@@ -46,28 +49,30 @@ void GameManager::Update()
 			UIcontroller->updateLifeSprite(HP);
 			objManager->stickyPackWork(); //等效于粘黏包裹
 		}
-		else//无生命值为0，游戏重新开始
+		else //无生命值为0，游戏重新开始
 		{
-			sceneManager->reStart();
+			layer->restartGame();
 		}
 		
 	}//球掉落屏幕底部
 	
-	if (keyleft == true)//如果左键被按住
+	if (keyleft == true)											//如果左键被按住
 		objManager->applyForce2Paddle(b2Vec2(-500.0f, 0.0f));
-	if (keyright == true)//如果右键被按住
+	if (keyright == true)											//如果右键被按住
 		objManager->applyForce2Paddle(b2Vec2(500.0f, 0.0f));
 
-	objManager->updateObj(); //更新各物体
-
-	objManager->deleteObj(); //删除待删除物体
+	handelEventQueue();												//处理消息队列
+	objManager->deleteObj();										//删除待删除物体
+	objManager->updateObj();										//更新各物体
+	if (objManager->getBrickCount() == 0)
+		layer->toNext();
 }
 
 bool GameManager::myOnTouchBegan(Touch* touch, Event* event)
 {
-	auto location = touch->getLocation();//获取触控点的位置
-	Size visibleSize = Director::getInstance()->getVisibleSize();//获取可见区域尺寸
-	Point origin = Director::getInstance()->getVisibleOrigin();//获取可见区域原点坐标
+	auto location = touch->getLocation();							//获取触控点的位置
+	Size visibleSize = Director::getInstance()->getVisibleSize();	//获取可见区域尺寸
+	Point origin = Director::getInstance()->getVisibleOrigin();		//获取可见区域原点坐标
 	b2Vec2 locationWorld = b2Vec2((location.x - origin.x - visibleSize.width / 2) / pixToMeter, (location.y - origin.y - visibleSize.height / 2) / pixToMeter);
 
 	for (int i = 0; i<3; i++)
@@ -75,6 +80,7 @@ bool GameManager::myOnTouchBegan(Touch* touch, Event* event)
 		if (mj == nullptr)
 		{
 			objManager->setPaddleLinearDamping(0.0f);
+			mj = new MyMouseJoint();
 			mj = objManager->createMouseJoint(locationWorld, 10.0f, 0.0f);
 			return true;
 		}
@@ -127,7 +133,7 @@ void GameManager::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 
 	if (EventKeyboard::KeyCode::KEY_ESCAPE == keyCode)
 	{
-		toPause();
+		layer->toPause();
 	}
 
 	if (EventKeyboard::KeyCode::KEY_P == keyCode)//去下一关的作弊键
@@ -671,7 +677,7 @@ void GameManager::playSound()
 
 void GameManager::clearResetPack(char sid)
 {
-	objManager->judgePack(sid);
+	layer->setPackresetschedule(sid);
 }
 
 Sprite* GameManager::getPaddelSprite() const
@@ -679,6 +685,36 @@ Sprite* GameManager::getPaddelSprite() const
 	return objManager->getPaddleSprite();
 }
 
+void GameManager::handelEventQueue()
+{
+	vector<eventObj*>::iterator il;
+	for (il = eventQueue.begin(); il != eventQueue.end();)
+	{
+		eventObj* newEvent = *il;
+		if (newEvent == nullptr)
+			continue;
+		switch (newEvent->eventType)
+		{
+		case PACK:
+		{
+			objManager->packWork(newEvent->Id->at(1));
+			if (newEvent->Id->at(1) != 'G')
+			{
+				objManager->addPack2Reset(newEvent->Id->at(1), newEvent->Id);
+				clearResetPack(newEvent->Id->at(1));
+			}
+			break;
+		}
+		case BRICK:
+			objManager->updateBrickObj(newEvent->Id, newEvent->contact, newEvent->attack);
+			break;
+		case SOUND:
+			layer->playSound();
+			break;
+		}
+		il = eventQueue.erase(il);
+	}
+}
 
 
 

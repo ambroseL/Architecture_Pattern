@@ -210,7 +210,7 @@ The order inside the `Update()` method is strictly made, we handle user input in
 Besides the update sequence, the interval between each loop also has a strong influence on the game performance. If it is too short, the game responds more rapidly, though much more burden for computation. If it is too long, the user may find the game lag behind his input and probably lose interests, bad news for a game. Most of the game engines now take flexible length of interval, that means the time depends on how much work we do in one frame. When transplanting the old game version to my Mac, I find the game objects move too fast that results in a splash screen. This is probably because of the computation variance between computers. We also made a misunderstanding of the update mechanism, and game looped at both regular and flexible interval, mixing two strategies together. Now we only call `ScheduleUpdate()`, an API for updating game at each frame so that more users on different platforms would have the same game experience.  
 
 ## Distribution
-**Liu Lidong**
+**Liu Lidong**<br />
 Team leader, overall architecture design, detailed design and implementation of MVC, Observer, Prototype, Component, Decorator, Delegate, Game Loop & Update patterns, presentation PPT,  project document.<br />
-**Yang Zhichao**
+**Yang Zhichao**<br />
 Team member, detailed design and implementation of Strategy, Event Queue, Game Loop & Update patterns.

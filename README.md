@@ -1,5 +1,8 @@
 # Break & Breaks: Design Patterns Course Project 
 ## Introduction
+
+![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/demo.png)
+
 Our project is to refactor a bricks game based on Cocos-2dx game engine, written in C++ in Jun, 2015.
 As the diagram shown below, we have made a hard work to achieve an overall redesign of the program’s architecture and interfaces. The total number of the committed lines is about 30,000+. 
 

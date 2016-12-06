@@ -5,8 +5,8 @@ As the diagram shown below, we have made a hard work to achieve an overall redes
 
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/contribution.png)
 
-## Implemntation
-The main goal of our project is to realize abstraction and decoupling. Several design patterns are taken into consideration, including MVC, component, prototype, delegate, observer, strategy , event queue, game update and loop. The implementations of these patterns are described as follows.
+## Implementation
+The main goal of our project is to realize abstraction and decoupling. Several design patterns are taken into consideration, including MVC, component, prototype, delegate, observer, strategy , event queue, game update and loop. The implementation of these patterns are described as follows.
 
 ### MVC
 The greatest mistake we have make in our previous version is putting all logics into one view class - `BeginLayer`. So the very solution we take first is to apply Model-view-controller(MVC) in our system. It divides a given software application into three interconnected parts: model, view and controller, so as to separate internal representations of information from the ways that information is presented to or accepted from the user. Our other design patterns are mainly used on the base of MVC.

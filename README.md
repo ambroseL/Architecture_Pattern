@@ -3,7 +3,7 @@
 Our project is to refactor a bricks game based on Cocos-2dx game engine, written in C++ in Jun, 2015.
 As the diagram shown below, we have made a hard work to achieve an overall redesign of the program’s architecture and interfaces. The total number of the committed lines is about 30,000+. 
 
-![](https://github.com/ambroseL/Architecture_Pattern/tree/master/Images/contribution.png)
+![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/contribution.png)
 
 ## Implemntation
 The main goal of our project is to realize abstraction and decoupling. Several design patterns are taken into consideration, including MVC, component, prototype, delegate, observer, strategy , event queue, game update and loop. The implementations of these patterns are described as follows.
@@ -13,7 +13,7 @@ The greatest mistake we have make in our previous version is putting all logics 
 
 ### Component & Decorator
 Due to the feature of our game that graphics components have a strong connect with physics ones, we utilize component pattern to composite both components into one entity object. By doing so, when game model object needs to be created, update or destroyed, the tasks can be handled with one function, which is actually handled by calling graphics and physics functions provided by its components. Here is an example of such high coherence design:
-![](https://github.com/ambroseL/Architecture_Pattern/tree/master/Images/component.png)
+![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/component.png)
 
 b2Body and Sprite are physics and graphics model classes provided by Cocos-2dx engine, but we do not add them to the `entityObj` class directly, instead, we use PhysicsComponent and GraphicsComponent to do such work, as a simple implementation of decorator pattern. The benefit is that there would be no more concern about the details of the engine’s API. For all the API functions we would call in the other part of the program, component classes decorate them like this:
 
@@ -112,7 +112,7 @@ void PaddleToBall::doStrategy()
 }
 ```
 Codes shown above are how a strategy class `PaddleToBall` works. And  the class diagram below explains the structure of this mechanism:
-![](https://github.com/ambroseL/Architecture_Pattern/tree/master/Images/Strategy.png)
+![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/Strategy.png)
 
 ### Event Queue
 As mentioned before, `EventHandler` would add an `eventObj` to the `eventQueue` when  it calls `doStrategy()`. The `eventObj` structure contains the contact event type as well as the ID of the contact object. In every game loop, `GameManager` checks the `eventQueue`, takes the `eventObj` out and works according to its data value. Here is the code:

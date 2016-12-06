@@ -4,7 +4,6 @@
 //#include "GameSceneManager.h"
 #include "GameManager.h"
 #include "ContactListener.h"
-#include "globalObj.h"
 
 bool GameLayer::init()
 {
@@ -112,7 +111,7 @@ bool GameLayer::init()
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(keyBoardListener, this);
 	
 	////调用更新
-	schedule(schedule_selector(GameLayer::update), 0.01f);
+	//schedule(schedule_selector(GameLayer::update), 0.01f);
 
 	//定时回调
 	scheduleUpdate();
@@ -237,12 +236,6 @@ void GameLayer::toPause()
 	gameManager->toPause();
 }
 
-
-void GameLayer::playSound()
-{
-	gameManager->playSound();
-}
-
 void GameLayer::createBricks()
 {
 	gameManager->createLayerBricks(this, world);
@@ -250,42 +243,42 @@ void GameLayer::createBricks()
 
 void GameLayer::resetAcceleratePack(float delta)
 {
-	gameManager->getObjManager()->clearAcceleratePackResetList();
+	gameManager->resetAcceleratePack();
 }
 
 void GameLayer::resetDeacceleratePack(float delta)
 {
-	gameManager->getObjManager()->clearDeacceleratePackResetList();
+	gameManager->resetDeacceleratePack();
 }
 
 void GameLayer::resetImagePack(float delta)
 {
-	gameManager->getObjManager()->clearImagePackResetList();
+	gameManager->resetImagePack();
 }
 
 void GameLayer::resetLengthenPack(float delta)
 {
-	gameManager->getObjManager()->clearLengthenPackResetList();
+	gameManager->resetLengthenPack();
 }
 
 void GameLayer::resetPermeatPack(float delta)
 {
-	gameManager->getObjManager()->clearPermeatPackResetList();
+	gameManager->resetPermeatPack();
 }
 
 void GameLayer::resetReversalPack(float delta)
 {
-	gameManager->getObjManager()->clearReversalPackResetList();
+	gameManager->resetReversalPack();
 }
 
 void GameLayer::resetShortenPack(float delta)
 {
-	gameManager->getObjManager()->clearShortenPackResetList();
+	gameManager->resetShortenPack();
 }
 
 void GameLayer::resetUpgradePack(float delta)
 {
-	gameManager->getObjManager()->clearUpgradePackResetList();
+	gameManager->resetUpgradePack();
 }
 
 void GameLayer::setPackresetschedule(char sid)
@@ -333,6 +326,16 @@ void GameLayer::setPackresetschedule(char sid)
 		break;
 	}
 	}
+}
+
+void GameLayer::playSound()
+{
+	gameManager->playSound();
+}
+
+void GameLayer::setSceneManager(SceneManager* sceneManager) const
+{
+	gameManager->setSceneManager(sceneManager);
 }
 
 

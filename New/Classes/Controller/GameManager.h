@@ -6,6 +6,7 @@
 #include "UIController.h"
 #include "MyJoints.h"
 #include "ObjManager.h"
+#include "globalObj.h"
 
 class GameLayer;
 
@@ -17,13 +18,7 @@ class GameManager
 
 	UIController* UIcontroller;				/* UI控制类 */
 
-	//EventHandler* eventHandler;			/* 事件处理类 */
-
 	int HP;									/* 玩家生命值 */
-
-	int brickcount;							/* 需要打碎的砖块数量 */
-
-	//std::vector<ObjEvent*> eventQueue;	/* 事件队列 */
 
 	bool isWin = false;						/* 本关卡是否胜利 */
 	
@@ -45,7 +40,13 @@ public:
 
 	void init();									//初始化各成员
 
-	void createLayerObj(GameLayer* layer, b2World* world);	//创建场景中的各物体
+	void initLayer(GameLayer* layer, b2World* world);	//创建场景中的球与挡板
+
+	void createLayerBricks(GameLayer* layer, b2World* world) const; //创建场景中的砖块
+
+	ObjManager* getObjManager() const { return this->objManager; }//创建场景中的砖块
+
+	void setSceneManager(SceneManager* manager);//创建场景中的砖块
 
 	//鼠标事件函数
 	bool myOnTouchBegan(Touch *touch, Event *event); //开始触控事件的处理方法
@@ -80,6 +81,25 @@ public:
 	void playSound();
 
 	void clearResetPack(char sid);
+
+	void handelEventQueue();
+
+	//包裹还原函数，delegate给objManger完成
+	void resetAcceleratePack();
+
+	void resetDeacceleratePack();
+
+	void resetImagePack();
+
+	void resetLengthenPack();
+
+	void resetPermeatPack();
+
+	void resetReversalPack();
+
+	void resetShortenPack();
+
+	void resetUpgradePack();
 
 	Sprite* getPaddelSprite() const;
 };

@@ -1,5 +1,6 @@
 #include "GameManager.h"
-
+#include "SceneManager.h"
+#include "GameLayer.h"
 
 GameManager::GameManager():mj(nullptr), layer(nullptr),objManager(nullptr),sceneManager(nullptr),UIcontroller(nullptr)
 {
@@ -27,15 +28,20 @@ void GameManager::initLayer(GameLayer* layer, b2World* world)
 	UIcontroller->setLayer(layer);
 }
 
-void GameManager::createLayerBricks(GameLayer* layer, b2World* world)
+void GameManager::createLayerBricks(GameLayer* layer, b2World* world) const
 {
 	objManager->createBricks(world, layer);
+}
+
+void GameManager::setSceneManager(SceneManager* manager)
+{
+	this->sceneManager = manager;
 }
 
 
 void GameManager::Update()
 {
-	if (isPause == true)
+	if (isPause == true)//暂停时不更新
 	{
 		return;
 	}
@@ -60,9 +66,8 @@ void GameManager::Update()
 		objManager->applyForce2Paddle(b2Vec2(-500.0f, 0.0f));
 	if (keyright == true)											//如果右键被按住
 		objManager->applyForce2Paddle(b2Vec2(500.0f, 0.0f));
-
-	handelEventQueue();												//处理消息队列
 	objManager->deleteObj();										//删除待删除物体
+	handelEventQueue();												//处理消息队列
 	objManager->updateObj();										//更新各物体
 	if (objManager->getBrickCount() == 0)
 		layer->toNext();
@@ -552,7 +557,6 @@ void GameManager::menueBack()
 
 	//卸载定时器
 	layer->unscheduleAllSelectors();
-	SceneManager* sceneManager = layer->getSceneManager();
 	sceneManager->goStartScene();
 }
 
@@ -709,13 +713,51 @@ void GameManager::handelEventQueue()
 			objManager->updateBrickObj(newEvent->Id, newEvent->contact, newEvent->attack);
 			break;
 		case SOUND:
-			layer->playSound();
+			this->playSound();
 			break;
 		}
 		il = eventQueue.erase(il);
 	}
 }
 
+void GameManager::resetAcceleratePack()
+{
+	objManager->clearAcceleratePackResetList();
+}
 
+void GameManager::resetDeacceleratePack()
+{
+	objManager->clearDeacceleratePackResetList();
+}
+
+void GameManager::resetImagePack()
+{
+	objManager->clearImagePackResetList();
+}
+
+void GameManager::resetLengthenPack()
+{
+	objManager->clearLengthenPackResetList();
+}
+
+void GameManager::resetPermeatPack()
+{
+	objManager->clearPermeatPackResetList();
+}
+
+void GameManager::resetReversalPack()
+{
+	objManager->clearReversalPackResetList();
+}
+
+void GameManager::resetShortenPack()
+{
+	objManager->clearShortenPackResetList();
+}
+
+void GameManager::resetUpgradePack()
+{
+	objManager->clearUpgradePackResetList();
+}
 
 

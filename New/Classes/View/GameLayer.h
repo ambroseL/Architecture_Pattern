@@ -27,7 +27,6 @@ extern class GameManager;
 class GameLayer: public Layer
 {	
 	GameManager* gameManager;
-	SceneManager* sceneManager;
 	
 	b2World* world;//物理世界
 
@@ -92,8 +91,8 @@ class GameLayer: public Layer
 
 	void restartGame();
 
-	//处理还原包裹
-	void resetPack(float32 delta);
+	// 播放音乐
+	void playSound();
 
 	//delegate给gamemanager的包裹还原函数
 	void resetLengthenPack(float delta);
@@ -108,10 +107,6 @@ class GameLayer: public Layer
 	//设置包裹还原函数的定时器
 	void setPackresetschedule(char sid);
 
-
-	//播放碰撞时的音效
-	void playSound();
-
 	//获取当前关卡等级
 	int getLevel() const { return level; }
 
@@ -119,10 +114,7 @@ class GameLayer: public Layer
 	void setLevel(const int& level)  { this->level = level; }
 
 	//设置当前的场景控制管理类
-	void setSceneManager(SceneManager* sceneManager) { this->sceneManager = sceneManager; }
-
-	//获取当前的场景控制管理类
-	SceneManager* getSceneManager() const { return this->sceneManager; }
+	void setSceneManager(SceneManager* sceneManager) const;
 
 	//创建场景内的砖块
 	void createBricks();

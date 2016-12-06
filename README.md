@@ -10,6 +10,9 @@ The main goal of our project is to realize abstraction and decoupling. Several d
 
 ### MVC
 The greatest mistake we have make in our previous version is putting all logics into one view class - `BeginLayer`. So the very solution we take first is to apply Model-view-controller(MVC) in our system. It divides a given software application into three interconnected parts: model, view and controller, so as to separate internal representations of information from the ways that information is presented to or accepted from the user. Our other design patterns are mainly used on the base of MVC.
+Here is the overall architecture of our game:
+
+![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/Overall.png)
 
 ### Component & Decorator
 Due to the feature of our game that graphics components have a strong connect with physics ones, we utilize component pattern to composite both components into one entity object. By doing so, when game model object needs to be created, update or destroyed, the tasks can be handled with one function, which is actually handled by calling graphics and physics functions provided by its components. Here is an example of such high coherence design:
@@ -46,6 +49,9 @@ EntityObj* ObjSpawner::spawnEntity()
 ```
 
 When we need to create objects, first we construct an ObjSpawner by setting its prototype, an EntityObj pointer. Then each time we need a new object like its prototype, we call `spawnEntity()`. By avoiding frequent object constructor callings, a lot of CPU’s work can be saved.
+To make it more clear, class diagram is shown below:
+
+![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/prototype.png)
 
 ### Delegate
 `Layer` is a special view class in Cocos-2dx engine, it contains all Sprites -the graphics class, and is responsible for scene rendering and update. However, as the game loops to update, such works are not merely for view class, controllers have to play a role, too. It is irrational to add the controller’s logic directly to the view, instead, we delegate it, for example:

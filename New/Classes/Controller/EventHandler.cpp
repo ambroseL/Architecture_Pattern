@@ -3,6 +3,7 @@
 #include "globalObj.h"
 #include <cmath>
 
+//==============ÀàµÄ²Ù×÷ =====================
 void BallToBrick::doStrategy()
 {
 	if (bodyA->GetUserData() == NULL || bodyB->GetUserData() == NULL)

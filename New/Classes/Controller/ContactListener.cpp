@@ -6,6 +6,7 @@
 #define PADDLE_TO_WALL 4
 #define PADDLE_TO_BALL 5
 
+//==============ÀàµÄ²Ù×÷ =====================
 EventHandler* ContactListener::createStrategy(int EventType, b2Body* bodyA, b2Body* bodyB, b2Contact* _contact, ObjManager* objManager)
 {
 	EventHandler *newStrategy = NULL;

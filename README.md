@@ -16,17 +16,22 @@ Due to the feature of our game that graphics components have a strong connect wi
 ![](https://github.com/ambroseL/Architecture_Pattern/tree/master/Images/component.png)
 
 b2Body and Sprite are physics and graphics model classes provided by Cocos-2dx engine, but we do not add them to the _entityObj_ class directly, instead, we use PhysicsComponent and GraphicsComponent to do such work, as a simple implementation of decorator pattern. The benefit is that there would be no more concern about the details of the engine’s API. For all the API functions we would call in the other part of the program, component classes decorate them like this:
-'''const b2Vec2 PhysicsComponent::getSpeed() 
+
+```
+const b2Vec2 PhysicsComponent::getSpeed() 
 {
 b2Vec2 vec2(0, 0);
 vec2 = body->GetLinearVelocity();
 return vec2;
 }
-Then if the API change in future update, we just need to fix those details in our component classes, not everywhere in the program.'''
+Then if the API change in future update, we just need to fix those details in our component classes, not everywhere in the program.
+```
 
 ### Prototype
 As our game produces a large amount of objects at the beginning, computer’s CPU and memory would be under much pressure during the time, and it may break down accordingly. One solution is to use prototype pattern, a more suitable strategy to create many classes at once than factory pattern for C++. The reason is that in C++, it does not have a base class like object in Java, and such base class is the key of factory pattern implementation. To finish production tasks, we first have to declare a _Clone()_ function in the base model class. 
-'''EntityObj* EntityObj::Clone()											
+
+```
+EntityObj* EntityObj::Clone()											
 {	
 return new EntityObj(this->physicsComponent->Clone(), this->graphicsComponent->Clone(),new std::string(this->id->c_str()));
 }
@@ -34,16 +39,20 @@ Then every model class inherited from it would have a _Clone()_ function as well
 EntityObj* ObjSpawner::spawnEntity()
 {
 return prototype->Clone();
-}'''
+}
+```
+
 When we need to create objects, first we construct an ObjSpawner by setting its prototype, an EntityObj pointer. Then each time we need a new object like its prototype, we call _spawnEntity()_. By avoiding frequent object constructor callings, a lot of CPU’s work can be saved.
 
 ### Delegate
 _Layer_ is a special view class in Cocos-2dx engine, it contains all Sprites -the graphics class, and is responsible for scene rendering and update. However, as the game loops to update, such works are not merely for view class, controllers have to play a role, too. It is irrational to add the controller’s logic directly to the view, instead, we delegate it, for example:
-'''void GameLayer::update(float delta)
+```
+void GameLayer::update(float delta)
 {
 gameManager->Update();
 step();
-}''' 
+}
+```
 Now, the tasks are done by controller _gameManager_, making the line between view and controller clear.
 
 ### Observer
@@ -52,7 +61,8 @@ If there is MVC, observer pattern follows. As an indispensable part for view cla
 ### Strategy
 The core of our game is physics contact - ball to wall, ball to ground, ball to paddle, ball to brick and pack to paddle. We take advantage of different strategies to deal with different situations, and most of these strategies can be abstracted as algorithms. When _ContactListener_ notices there is a contact, it creates corresponding strategy class _EventHandler_, then eventHandler would  _doStrategy()_, last a new event  would be pushed to the _eventQueue_, a queue designed for Event Queue pattern. 
 
-'''void PaddleToBall::doStrategy()
+```
+void PaddleToBall::doStrategy()
 {
 b2Vec2 ball_vec;
 if (bodyA->GetUserData() == NULL || bodyB->GetUserData() == NULL)
@@ -96,13 +106,15 @@ ball_vec.x = -x / d * (-ball_vec.y) * 1.8f;
 ball_vec.y = sqrt(objManager->getBallSpeed().y * objManager->getBallSpeed().y - ball_vec.x * ball_vec.x) * flag;
 }
 bodyB->SetLinearVelocity(ball_vec);
-}'''
+}
+```
 Codes shown above are how a strategy class _PaddleToBall_ works. And  the class diagram below explains the structure of this mechanism:
 ![](https://github.com/ambroseL/Architecture_Pattern/tree/master/Images/Strategy.png)
 
 ### Event Queue
 As mentioned before, _EventHandler_ would add an _eventObj_ to the _eventQueue_ when  it calls _doStrategy()_. The _eventObj_ structure contains the contact event type as well as the ID of the contact object. In every game loop, _GameManager_ checks the _eventQueue_, takes the _eventObj_ out and works according to its data value. Here is the code:
-'''void GameManager::handelEventQueue()
+```
+void GameManager::handelEventQueue()
 {
 vector<eventObj*>::iterator il;
 for (il = eventQueue.begin(); il != eventQueue.end();)
@@ -131,11 +143,13 @@ break;
 }
 il = eventQueue.erase(il);
 }
-}'''
+}
+```
 
 ### Game Loop & Update 
 Almost every game has a Game Loop, and relatively few programs outside of games use them. It is the central axle that the clock spins on. Objects hear its ticking through Update Methods. The very first key part of a real game loop: it processes user input, but does not wait for it. The loop always keeps spinning like this:
-'''while (true)
+```
+while (true)
 
 {
 
@@ -145,9 +159,11 @@ update();
 
 render();
 
-}'''
+}
+```
 _processInput()_ handles any user input that has happened since the last call. Then, _update()_ advances the game simulation one step. It runs AI and physics Finally, _render()_ draws the game so the player can see what happened. Thanks to Cocos-2dx engine, we do not need to concern about the how _render()_ actually works. And the _scheduleUpdate()_ API ensures the _Update()_ function would be called in each loop. We have already shown how our _Update()_ in _GameLayer_ is delegated to _GameManager_, and the logic inside is:
-'''void GameManager::Update()
+```
+void GameManager::Update()
 {
 if (isPause == true)//暂停时不更新
 {
@@ -184,12 +200,15 @@ objManager->updateObj();
 //无剩余砖块，进入下一关
 if (objManager->getBrickCount() == 0)
 layer->toNext();									
-}'''
+}
+```
+
 The order inside the _Update()_ method is strictly made, we handle user input in the first place, next we check if the ball is out of screen: the user HP would subtract one, game is over when it is zero. If not, work continues. We handle the eventQueue, then delete objects, update their positions and go to next level if no bricks left. 
 Besides the update sequence, the interval between each loop also has a strong influence on the game performance. If it is too short, the game responds more rapidly, though much more burden for computation. If it is too long, the user may find the game lag behind his input and probably lose interests, bad news for a game. Most of the game engines now take flexible length of interval, that means the time depends on how much work we do in one frame. When transplanting the old game version to my Mac, I find the game objects move too fast that results in a splash screen. This is probably because of the computation variance between computers. We also made a misunderstanding of the update mechanism, and game looped at both regular and flexible interval, mixing two strategies together. Now we only call _ScheduleUpdate()_, an API for updating game at each frame so that more users on different platforms would have the same game experience.  
 
 ## Distribution
 **Liu Lidong**
-Team leader, overall architecture design, detailed design and implementation of MVC, Observer, Prototype, Component, Decorator, Delegate, Game Loop & Update patterns, presentation PPT,  project document
+Team leader, overall architecture design, detailed design and implementation of MVC, Observer, Prototype, Component, Decorator, Delegate, Game Loop & Update patterns, presentation PPT,  project document.
+
 **Yang Zhichao**
-Team member, detailed design and implementation of Strategy, Event Queue, Game Loop & Update patterns
+Team member, detailed design and implementation of Strategy, Event Queue, Game Loop & Update patterns.

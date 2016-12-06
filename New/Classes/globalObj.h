@@ -3,7 +3,18 @@
 #include <vector>
 #include "Box2D/Dynamics/Contacts/b2Contact.h"
 using namespace std;
-
+/**
+* 全局变量
+*
+*#include <vector>
+*#include "Box2D/Dynamics/Contacts/b2Contact.h"
+*"GraphicsComponent.h" <BR>
+*-llib
+*
+* 全局变量包括消息队列，其中包含消息结构体
+*
+* @seesomething
+*/
 
 #define PACK 1
 #define BRICK 2
@@ -24,10 +35,8 @@ extern struct eventObj
 	int attack;
 	string* Id;
 	b2Contact* contact;
-};
+};//自定义消息结构体
 
-extern vector<eventObj*> eventQueue;
-
-extern vector<char> pack2ResetQueue;
+extern vector<eventObj*> eventQueue;//消息队列
 
 #endif

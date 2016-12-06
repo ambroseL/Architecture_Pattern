@@ -2,7 +2,6 @@
 #define _BrickObj_H_
 
 #include "EntityObj.h"
-
 /**
 * ×©¿éÊµÌåÀà
 *

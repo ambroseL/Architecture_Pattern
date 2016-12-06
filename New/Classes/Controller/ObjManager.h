@@ -7,15 +7,21 @@
 #include "MyJoints.h"
 #include "WallObj.h"
 #include "GameLayer.h"
-//#include "GameLayer.h"
 
 using namespace cocos2d;
+
 /**
 * 物体管理类
 *
-*#include <vector>
-*#include "2d/CCParticleExamples.h"
-*-llib
+* #include "vector"
+* #include "cocos2d.h"
+* #include "BallObj.h"
+* #include "PaddleObj.h"
+* #include "MyJoints.h"
+* #include "WallObj.h"
+* #include "GameLayer.h"
+* #include "2d/CCParticleExamples.h"
+* -llib
 *
 * 提供物体的增删改查，维护物体相关的容器
 *
@@ -27,6 +33,7 @@ class ObjManager
 
 
 public:
+	// 自定义函数指针
 	typedef void (ObjManager::*ptr_func1)();
 	typedef void (ObjManager::*ptr_func2)(b2Vec2 pos);
 
@@ -69,7 +76,11 @@ public:
 	*/
 	MyMouseJoint* createMouseJoint( b2Vec2 target, float32 frequencyHz, float32 dampingRatio);
 
-
+	/**
+	*添加包裹至还原包裹队列
+	*@sid 包裹类型
+	*@ids 包裹ID
+	*/
 	void addPack2Reset(char sid, std::string* ids);
 
 	/**
@@ -309,15 +320,27 @@ public:
 	*/
 	Sprite* getPaddleSprite() const;
 
+	/**
+	*获取球体速度
+	*/
 	b2Vec2 getBallSpeed() const { return ball->getSpeed(); }
 
+	/**
+	*获取球体攻击力
+	*/
 	int getBallAttack() { return ball->getAttack(); }
 
+	/**
+	*获取球体穿透状态
+	*/
 	bool getBallPermeat() const { return ball->getPermeat(); }
 
+	/**
+	*设置球体速度
+	*@parameter speed 待设置的球体速度
+	*/
 	void setBallSpeed(const b2Vec2& speed) { ball->setSpeed(speed); }
 
-	bool isEmpty() { return deleteObjList.empty(); }
 
 private:
 

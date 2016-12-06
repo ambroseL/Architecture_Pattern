@@ -1,6 +1,11 @@
 #include "GameManager.h"
 #include "SceneManager.h"
-#include "GameLayer.h"
+#include "GameLayer.h"// class implemented
+
+/////////////// PUBLIC///////////////////////
+
+//================= 构造函数 ====================
+
 
 GameManager::GameManager():mj(nullptr), layer(nullptr),objManager(nullptr),sceneManager(nullptr),UIcontroller(nullptr)
 {
@@ -8,11 +13,14 @@ GameManager::GameManager():mj(nullptr), layer(nullptr),objManager(nullptr),scene
 	keyright = false;
 	keyleft = false;
 	HP = 2;
-}
+}// GameManager
 
 GameManager::~GameManager()
 {
-}
+}// GameManager
+
+
+ //==============类的操作 =====================
 
 void GameManager::init()
 {	
@@ -684,10 +692,7 @@ void GameManager::clearResetPack(char sid)
 	layer->setPackresetschedule(sid);
 }
 
-Sprite* GameManager::getPaddelSprite() const
-{
-	return objManager->getPaddleSprite();
-}
+
 
 void GameManager::handelEventQueue()
 {
@@ -758,6 +763,13 @@ void GameManager::resetShortenPack()
 void GameManager::resetUpgradePack()
 {
 	objManager->clearUpgradePackResetList();
+}
+
+//==============属性存取 =====================
+
+Sprite* GameManager::getPaddelSprite() const
+{
+	return objManager->getPaddleSprite();
 }
 
 

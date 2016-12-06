@@ -1,9 +1,6 @@
-#include "MyHelpLayer.h"
+#include "MyHelpLayer.h"// class implemented
 
-
-MyHelpLayer::~MyHelpLayer()
-{
-}
+/////////////// PUBLIC///////////////////////
 
 bool MyHelpLayer::init()
 {
@@ -48,6 +45,8 @@ bool MyHelpLayer::init()
 
 	return true;
 }
+
+//==============ÀàµÄ²Ù×÷ =====================
 
 void MyHelpLayer::menueBack(cocos2d::Ref*  pSender)
 {

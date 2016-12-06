@@ -22,14 +22,17 @@
 #include "AccelerateBrick.h"
 #include "GameLayer.h"
 #include "globalObj.h"
-#include "TransmitBrick.h"
+#include "TransmitBrick.h"// class implemented
 
+/////////////// PUBLIC///////////////////////
+
+//================= 构造函数 ====================
 struct pos
 {
 	float x;
 	float y;
 	int cnt;
-};
+};//自定义位置结构体
 
 #define pixToMeter 5     //含义为几个像素为1米
 
@@ -101,13 +104,13 @@ ObjManager::ObjManager()
 	transmitBrickIndex = 0;
 	ballObjIndex = 0;
 	brickCount = 0;
-}
+}//ObjManager
 
 ObjManager::~ObjManager()
 {
-}
+}//~ObjManager
 
-
+ //==============类的操作 =====================
 void ObjManager::createObj(b2World* bWorld, GameLayer* Llayer)
 {
 	world = bWorld;
@@ -2497,7 +2500,7 @@ void ObjManager::transmitBrickWork()
 	ids = std::string(StringUtils::format("BT%d", cnt));
 	TransmitBrick* po = (TransmitBrick*)objMap[ids];
 	b2Vec2 pos = po->getPosition();
-	pos.y -= ((15 + Ball::radius) / pixToMeter);
+	pos.y -= ((15 + ball->getRadius()) / pixToMeter);
 	ball->setSpeed(b2Vec2(0.0f, -abs(sqrt(ball->getSpeed().x * ball->getSpeed().x + ball->getSpeed().y * ball->getSpeed().y))));
 	ball->setPosition(b2Vec2(pos.x * pixToMeter, pos.y*pixToMeter));
 }
@@ -2617,22 +2620,6 @@ void ObjManager::shortenPackWork()
 	}
 }
 
- b2Vec2 ObjManager::getBallPos() const
-{
-	 return ball->getPosition();
-}
-
- void ObjManager::applyForce2Paddle(b2Vec2 force)
- {
-	 paddle->getPhysicsComponent()->getBody()->ApplyForce(b2Vec2(force.x * paddle->getPhysicsComponent()->getMass(), force.y), 
-	 	paddle->getPhysicsComponent()->getBody()->GetWorldCenter(), true);
- }
-
- void ObjManager::setPaddleLinearDamping(float32 linearDamping)
- {
-	 paddle->getPhysicsComponent()->getBody()->SetLinearDamping(linearDamping);
- }
-
 void ObjManager::shootBall()
 {
 	if (paddle->getSticky() == false)
@@ -2645,16 +2632,6 @@ void ObjManager::shootBall()
 	ball->setConstantSpeed(vLine);
 	ball->setInitialSpeed(vLine);
 	ball->setSpeed(vLine);
-}
-
-void ObjManager::setPaddleVelocity(b2Vec2 Speed)
-{
-	paddle->setSpeed(Speed);
-}
-
-Sprite* ObjManager::getPaddleSprite() const
-{
-	return paddle->getGraphicsComponent()->getSprite();
 }
 
 void ObjManager::packWork(char sid)
@@ -2716,7 +2693,33 @@ void ObjManager::addPack2Reset(char sid, std::string* ids)
 	}
 }
 
+//==============属性存取 =====================
 
+void ObjManager::setPaddleVelocity(b2Vec2 Speed)
+{
+	paddle->setSpeed(Speed);
+}
+
+Sprite* ObjManager::getPaddleSprite() const
+{
+	return paddle->getGraphicsComponent()->getSprite();
+}
+
+b2Vec2 ObjManager::getBallPos() const
+{
+	return ball->getPosition();
+}
+
+void ObjManager::applyForce2Paddle(b2Vec2 force)
+{
+	paddle->getPhysicsComponent()->getBody()->ApplyForce(b2Vec2(force.x * paddle->getPhysicsComponent()->getMass(), force.y),
+		paddle->getPhysicsComponent()->getBody()->GetWorldCenter(), true);
+}
+
+void ObjManager::setPaddleLinearDamping(float32 linearDamping)
+{
+	paddle->getPhysicsComponent()->getBody()->SetLinearDamping(linearDamping);
+}
 
 
 

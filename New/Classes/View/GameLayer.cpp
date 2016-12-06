@@ -1,10 +1,11 @@
-#include "GameLayer.h"
+#include "GameLayer.h"// class implemented
 #include "SimpleAudioEngine.h"
-//#include "ContactListener.h""
-//#include "GameSceneManager.h"
 #include "GameManager.h"
 #include "ContactListener.h"
 
+/////////////// PUBLIC///////////////////////
+
+//================= 初始化函数 ====================
 bool GameLayer::init()
 {
 	//调用父类的初始化
@@ -119,26 +120,7 @@ bool GameLayer::init()
 	return true;
 }
 
-Sprite* GameLayer::getLifeSprite() const
-{
-	return this->lifeSp;
-}
-
-void GameLayer::removePauseSprite()
-{
-	PauseSp->runAction(RemoveSelf::create(true));
-	transparentBackgroundSp->runAction(RemoveSelf::create(true));
-}
-
-void GameLayer::setBackgroundSprite(Sprite* dSp)
-{
-	transparentBackgroundSp = dSp;
-}
-
-void GameLayer::setPauseSprite(Sprite* dSp)
-{
-	PauseSp = dSp;
-}
+//==============类的操作 =====================
 
 bool GameLayer::myOnTouchBegan(Touch* touch, Event* event)
 {
@@ -333,13 +315,34 @@ void GameLayer::playSound()
 	gameManager->playSound();
 }
 
+
+//==============属性存取 =====================
+
+Sprite* GameLayer::getLifeSprite() const
+{
+	return this->lifeSp;
+}
+
+void GameLayer::removePauseSprite()
+{
+	PauseSp->runAction(RemoveSelf::create(true));
+	transparentBackgroundSp->runAction(RemoveSelf::create(true));
+}
+
+void GameLayer::setBackgroundSprite(Sprite* dSp)
+{
+	transparentBackgroundSp = dSp;
+}
+
+void GameLayer::setPauseSprite(Sprite* dSp)
+{
+	PauseSp = dSp;
+}
+
 void GameLayer::setSceneManager(SceneManager* sceneManager) const
 {
 	gameManager->setSceneManager(sceneManager);
 }
-
-
-
 
 
 

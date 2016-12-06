@@ -1,9 +1,11 @@
 #include "SceneManager.h"
 #include "GameLayer.h"
 #include "StartLayer.h"
-#include "MyHelpLayer.h"
+#include "MyHelpLayer.h"// class implemented
 
+/////////////// PUBLIC///////////////////////
 
+//==============ÀàµÄ²Ù×÷ =====================
 void SceneManager::createScene()
 {
 	Scene* startScene = Scene::create();

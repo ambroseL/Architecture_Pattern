@@ -3,25 +3,26 @@
 
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/demo.png)
 
-Our project is to refactor a bricks game based on Cocos-2dx game engine, written in C++ in Jun, 2015.
-As the diagram shown below, we have made a hard work to achieve an overall redesign of the program’s architecture and interfaces. The total number of the committed lines is about 30,000+. 
+Our project is to refactor a bricks game based on Cocos-2dx game engine, written in C++ in Jun, 2015.<br />
+As the diagram shown below, we work hard to achieve an overall redesign of the program’s architecture and interfaces. The total number of the committed lines is about 30,000+. 
 
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/contribution.png)
 
 ## Implementation
-The main goal of our project is to realize abstraction and decoupling. Several design patterns are taken into consideration, including MVC, component, prototype, delegate, observer, strategy , event queue, game update and loop. The implementation of these patterns are described as follows.
+The main goal of our project is to realize abstraction and decoupling. Several design patterns are taken into consideration, including `MVC`, `component`, `prototype`, `delegate`, `observer`, `strategy` , `event queue`, `game update and loop`. The implementation of these patterns are described as follows.
 
 ### MVC
-The greatest mistake we have make in our previous version is putting all logics into one view class - `BeginLayer`. So the very solution we take first is to apply Model-view-controller(MVC) in our system. It divides a given software application into three interconnected parts: model, view and controller, so as to separate internal representations of information from the ways that information is presented to or accepted from the user. Our other design patterns are mainly used on the base of MVC.
+The biggest shortcoming of our old version is putting all the logics into one view class - `BeginLayer`, making it so hard to maintain the whole project. The very solution we take is to apply `MVC(Model-view-controller)pattern`, which divides a given software application into three interconnected parts: model, view and controller, so as to separate internal representations of information from the ways that information is presented to or accepted from the user. Our other design patterns are mainly based of MVC.
 Here is the overall architecture of our game:
 
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/Overall.png)
 
 ### Component & Decorator
-Due to the feature of our game that graphics components have a strong connect with physics ones, we utilize component pattern to composite both components into one entity object. By doing so, when game model object needs to be created, update or destroyed, the tasks can be handled with one function, which is actually handled by calling graphics and physics functions provided by its components. Here is an example of such high coherence design:
+Due to the feature of our game that graphics components have a strong connection with physics ones, we utilize `component pattern` to composite them into one `EntityObj`. By doing so, when an `EntityObj` needs to be created, update or destroyed, we can just call graphics and physics functions provided by its components. Here is an example of such high coherence design:
+
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/component.png)
 
-b2Body and Sprite are physics and graphics model classes provided by Cocos-2dx engine, but we do not add them to the `entityObj` class directly, instead, we use PhysicsComponent and GraphicsComponent to do such work, as a simple implementation of decorator pattern. The benefit is that there would be no more concern about the details of the engine’s API. For all the API functions we would call in the other part of the program, component classes decorate them like this:
+b2Body and Sprite are physics and graphics model classes provided by Cocos-2dx engine, but we do not add them to the `entityObj` directly, instead, we use PhysicsComponent and GraphicsComponent to do so, as an implementation of `decorator pattern`. The benefit is that there would be no more concern about the details of the engine’s API. For all the API functions we would call in other parts of the program, component classes decorate them like this:
 
 ```C++
 const b2Vec2 PhysicsComponent::getSpeed() 
@@ -31,10 +32,10 @@ const b2Vec2 PhysicsComponent::getSpeed()
   return vec2;
 }
 ```
-Then if the API change in future update, we just need to fix those details in our component classes, not everywhere in the program.
+Then if the API change in future update, we just need to fix them in our component classes, not everywhere in the program.
 
 ### Prototype
-As our game produces a large amount of objects at the beginning, computer’s CPU and memory would be under much pressure during the time, and it may break down accordingly. One solution is to use prototype pattern, a more suitable strategy to create many classes at once than factory pattern for C++. The reason is that in C++, it does not have a base class like object in Java, and such base class is the key of factory pattern implementation. To finish production tasks, we first have to declare a `Clone()` function in the base model class. 
+At the beginning of each scene, initializing a large amount of objects is such a big burden for computer’s CPU and memory,even brings about break down. One solution is to use `prototype pattern`, a more suitable way for mass production than `factory pattern` in C++. The reason is that C++ does not have a base class like `Object` in Java, and such base class is the key of `factory pattern` implementation. To accomplish such tasks, we declare a `Clone()` function in the base model class. 
 
 ```C++
 EntityObj* EntityObj::Clone()											
@@ -42,7 +43,7 @@ EntityObj* EntityObj::Clone()
   return new EntityObj(this->physicsComponent->Clone(), this->graphicsComponent->Clone(),new std::string(this->id->c_str()));
 }
 ```
-Then every model class inherited from it would have a `Clone()` function as well, though it may override it as necessary when it has extra members besides the inherited ones. Now we need a `spawner` to spawn our objects. In `ObjSpawner.cpp`, we define:
+Then every model class inherited from it would have a `Clone()` function as well, though it may override it as necessary when there are extra members besides the inherited ones. Now we need a `spawner` to spawn our objects. In `ObjSpawner.cpp`, we define:
 
 ```C++
 EntityObj* ObjSpawner::spawnEntity()
@@ -51,28 +52,28 @@ EntityObj* ObjSpawner::spawnEntity()
 }
 ```
 
-When we need to create objects, first we construct an ObjSpawner by setting its prototype, an EntityObj pointer. Then each time we need a new object like its prototype, we call `spawnEntity()`. By avoiding frequent object constructor callings, a lot of CPU’s work can be saved.
+When it comes to create objects, first we construct an ObjSpawner by setting its prototype, an `EntityObj` pointer. Then each time we need a new object like its prototype, we call `spawnEntity()`. By avoiding frequent object constructor callings, a lot of CPU’s work could be saved.
 To make it more clear, class diagram is shown below:
 
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/prototype.png)
 
 ### Delegate
-`Layer` is a special view class in Cocos-2dx engine, it contains all Sprites -the graphics class, and is responsible for scene rendering and update. However, as the game loops to update, such works are not merely for view class, controllers have to play a role, too. It is irrational to add the controller’s logic directly to the view, instead, we delegate it, for example:
+`Layer` is a special view class in Cocos-2dx engine, it contains all Sprites - the graphics class, and is responsible for scene rendering and update. However, more complicated things happen during the update looping, and such works are beyond view class responsibilities. Controllers have to play a role, too. It is irrational to add all the controller’s logic directly to the view, instead, we delegate it, for example:
 
 ```C++
 void GameLayer::update(float delta)
 {
-  gameManager->Update();
-  step();
+  gameManager->Update();//场景更新逻辑
+  step();//物理世界更新逻辑
 }
 ```
-Now, the tasks are done by controller `gameManager`, making the line between view and controller clear.
+Now, a part of the tasks is done by `gameManager`, a controller, making the border between view and controller clear.
 
 ### Observer
-If there is MVC, observer pattern follows. As an indispensable part for view class - it ensures that controller would notify view classes to update when there is a change in model. In our codes, it is used in our `update()` function, more details are mentioned in the update pattern description.
+When there is a `MVC`, `observer pattern` follows. As an indispensable part of view class - it ensures controller would notify view class to update when there is a change in model. In our codes, it is used in `update()` function, more details would be told in `update pattern`.
 
 ### Strategy
-The core of our game is physics contact - ball to wall, ball to ground, ball to paddle, ball to brick and pack to paddle. We take advantage of different strategies to deal with different situations, and most of these strategies can be abstracted as algorithms. When `ContactListener` notices there is a contact, it creates corresponding strategy class `EventHandler`, then eventHandler would  `doStrategy()`, last a new event  would be pushed to the `eventQueue`, a queue designed for Event Queue pattern. 
+Physics simulation, the core of our game, includes ball to wall, ball to ground, ball to paddle, ball to brick and pack to paddle contact. We take advantage of `strategy pattern`,abstract algorithms as stratgies in different situations. When `ContactListener` notices there is a contact, it creates corresponding strategy class `EventHandler`, then eventHandler would  `doStrategy()`. Eventually, a new `EventObj` would be pushed to `eventQueue`, a queue designed for `Event Queue pattern`. 
 
 ```C++
 void PaddleToBall::doStrategy()
@@ -120,11 +121,11 @@ void PaddleToBall::doStrategy()
   bodyB->SetLinearVelocity(ball_vec);
 }
 ```
-Codes shown above are how a strategy class `PaddleToBall` works. And  the class diagram below explains the structure of this mechanism:
+Codes above are how the strategy class `PaddleToBall` works. And the class diagram below explains the structure of this mechanism:
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/Strategy.png)
 
 ### Event Queue
-As mentioned before, `EventHandler` would add an `eventObj` to the `eventQueue` when  it calls `doStrategy()`. The `eventObj` structure contains the contact event type as well as the ID of the contact object. In every game loop, `GameManager` checks the `eventQueue`, takes the `eventObj` out and works according to its data value. Here is the code:
+As mentioned before, `EventHandler` adds an `EventObj` to `eventQueue` when calling `doStrategy()`. The `EventObj` is a structure containing the contact event type as well as the ID of the contact object. In every game loop, `GameManager` checks the `eventQueue`, takes `EventObj` out and works according to its data value. Here is the code:
 
 ```C++
 void GameManager::handelEventQueue()
@@ -209,8 +210,8 @@ void GameManager::Update()
 }
 ```
 
-The order inside the `Update()` method is strictly made, we handle user input in the first place, next we check if the ball is out of screen: the user HP would subtract one, game is over when it is zero. If not, work continues. We handle the eventQueue, then delete objects, update their positions and go to next level if no bricks left. 
-Besides the update sequence, the interval between each loop also has a strong influence on the game performance. If it is too short, the game responds more rapidly, though much more burden for computation. If it is too long, the user may find the game lag behind his input and probably lose interests, bad news for a game. Most of the game engines now take flexible length of interval, that means the time depends on how much work we do in one frame. When transplanting the old game version to my Mac, I find the game objects move too fast that results in a splash screen. This is probably because of the computation variance between computers. We also made a misunderstanding of the update mechanism, and game looped at both regular and flexible interval, mixing two strategies together. Now we only call `ScheduleUpdate()`, an API for updating game at each frame so that more users on different platforms would have the same game experience.  
+The order of logic inside `Update()` is strictly execuded: we handle user input in the first place, next we check whether the ball is out of the screen: if true, the user's HP subtracts one, game is over when it is zero. Otherwise, work continues. We check `eventQueue`, then delete objects, update their positions and go to next level if no bricks left. 
+Besides update sequence, the interval between each loop also has a strong influence on game performance. If it is too short, the game reacts more timely, though much more burden for computation. While it is too long, the user may find the game lag behind his input and probably lose interests, bad news for a game. Most of the game engines now take flexible length of interval, which means the time depends on how much work we do in one frame. When transplanting the old game version to my new laptop, I find the game objects move too fast that results in a splash screen. This is probably because computation ability varies between computers. Another reason is that previously, we misunderstood the update mechanism, made the game loop at both regular and flexible interval. Now we only call `ScheduleUpdate()`, a Cocos API for updating game at each frame so that more users on different platforms would have the same game experience.  
 
 ## Distribution
 **Liu Lidong**<br />

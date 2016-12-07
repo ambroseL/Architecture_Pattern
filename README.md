@@ -12,7 +12,7 @@ As the diagram shown below, we work hard to achieve an overall redesign of the p
 The main goal of our project is to realize abstraction and decoupling. Several design patterns are taken into consideration, including `MVC`, `component`, `prototype`, `delegate`, `observer`, `strategy` , `event queue`, `game update and loop`. The implementation of these patterns are described as follows.
 
 ### MVC
-The biggest shortcoming of our old version is putting all the logics into one view class - `BeginLayer`, making it so hard to maintain the whole project. The very solution we take is to apply `MVC(Model-view-controller)pattern`, which divides a given software application into three interconnected parts: model, view and controller, so as to separate internal representations of information from the ways that information is presented to or accepted from the user. Our other design patterns are mainly based of MVC.
+The biggest shortcoming of our old version is putting all the logics into one view class - `BeginLayer`, making it so hard to maintain the whole project. The very solution we take is to apply `MVC(Model-view-controller)pattern`, which divides a given software application into three interconnected parts: model, view and controller, so as to separate internal representations of information from the ways that information is presented to or accepted from the user. Our other design patterns are mainly based on MVC.
 Here is the overall architecture of our game:
 
 ![](https://github.com/ambroseL/Architecture_Pattern/raw/master/Images/Overall.png)
@@ -80,7 +80,7 @@ void PaddleToBall::doStrategy()
 {
   b2Vec2 ball_vec;
   if (bodyA->GetUserData() == NULL || bodyB->GetUserData() == NULL)
-      return;
+     return;
   std::string* aid = (std::string*)bodyA->GetUserData();
 
   eventObj* newEvent = new eventObj(SOUND, 0, NULL, contact);
@@ -99,8 +99,8 @@ void PaddleToBall::doStrategy()
   float x = bodyA->GetPosition().x, y = bodyA->GetPosition().y, d;
   if (pos->points->y < y + objManager->getPaddleInitialHeight() / pixToMeter - 3.0f)
   {
-    bodyB->SetLinearVelocity(b2Vec2(0, -20.0f));
-    return;
+     bodyB->SetLinearVelocity(b2Vec2(0, -20.0f));
+     return;
   }
   ball_vec = bodyB->GetLinearVelocity();
   d = objManager->getPaddleInitialHeight() * 2;
@@ -110,13 +110,13 @@ void PaddleToBall::doStrategy()
   flag = -1;
   if (pos->points->x > bodyA->GetPosition().x)
   {
-    ball_vec.x = x / d * (-ball_vec.y) * 1.8f;
-    ball_vec.y = sqrt(objManager->getBallSpeed().y * objManager->getBallSpeed().y - ball_vec.x * ball_vec.x) * flag;	
+     ball_vec.x = x / d * (-ball_vec.y) * 1.8f;
+     ball_vec.y = sqrt(objManager->getBallSpeed().y * objManager->getBallSpeed().y - ball_vec.x * ball_vec.x) * flag;	
   }
   else
   {
-    ball_vec.x = -x / d * (-ball_vec.y) * 1.8f;
-    ball_vec.y = sqrt(objManager->getBallSpeed().y * objManager->getBallSpeed().y - ball_vec.x * ball_vec.x) * flag;
+     ball_vec.x = -x / d * (-ball_vec.y) * 1.8f;
+     ball_vec.y = sqrt(objManager->getBallSpeed().y * objManager->getBallSpeed().y - ball_vec.x * ball_vec.x) * flag;
   }
   bodyB->SetLinearVelocity(ball_vec);
 }
@@ -150,10 +150,10 @@ void GameManager::handelEventQueue()
      }
      case BRICK://碰撞物体为砖块
         objManager->updateBrickObj(newEvent->Id, newEvent->contact, newEvent->attack);//更新对应砖块
-         break;
-      case SOUND://仅需播放碰撞声音
-         layer->playSound();
-          break;
+        break;
+     case SOUND://仅需播放碰撞声音
+        layer->playSound();
+        break;
    }
    il = eventQueue.erase(il);
   }
@@ -189,8 +189,8 @@ void GameManager::Update()
     HP--;	
     if (HP > 0)
     {
-       UIcontroller->updateLifeSprite(HP);
-       objManager->stickyPackWork(); //等效于粘黏包裹
+      UIcontroller->updateLifeSprite(HP);
+      objManager->stickyPackWork(); //等效于粘黏包裹
     }
     else //无生命值为0，游戏重新开始
     {

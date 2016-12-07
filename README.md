@@ -35,7 +35,7 @@ const b2Vec2 PhysicsComponent::getSpeed()
 Then if the API change in future update, we just need to fix them in our component classes, not everywhere in the program.
 
 ### Prototype
-At the beginning of each scene, initializing a large amount of objects is such a big burden for computer’s CPU and memory,even brings about break down. One solution is to use `prototype pattern`, a more suitable way for mass production than `factory pattern` in C++. The reason is that C++ does not have a base class like `Object` in Java, and such base class is the key of `factory pattern` implementation. To accomplish such tasks, we declare a `Clone()` function in the base model class. 
+At the beginning of each scene, initializing a large amount of objects is such a big burden for computer’s CPU and memory, even brings about break down. One solution is to use `prototype pattern`, a more suitable way for mass production than `factory pattern` in C++. The reason is that C++ does not have a base class like `Object` in Java, and such base class is the key of `factory pattern` implementation. To accomplish such tasks, we declare a `Clone()` function in the base model class. 
 
 ```C++
 EntityObj* EntityObj::Clone()											
@@ -73,7 +73,7 @@ Now, a part of the tasks is done by `gameManager`, a controller, making the bord
 When there is a `MVC`, `observer pattern` follows. As an indispensable part of view class - it ensures controller would notify view class to update when there is a change in model. In our codes, it is used in `update()` function, more details would be told in `update pattern`.
 
 ### Strategy
-Physics simulation, the core of our game, includes ball to wall, ball to ground, ball to paddle, ball to brick and pack to paddle contact. We take advantage of `strategy pattern`,abstract algorithms as stratgies in different situations. When `ContactListener` notices there is a contact, it creates corresponding strategy class `EventHandler`, then eventHandler would  `doStrategy()`. Eventually, a new `EventObj` would be pushed to `eventQueue`, a queue designed for `Event Queue pattern`. 
+Physics simulation, the core of our game, includes ball to wall, ball to ground, ball to paddle, ball to brick and pack to paddle contact. We take advantage of `strategy pattern`,abstract algorithms as strategies in different situations. When `ContactListener` notices there is a contact, it creates corresponding strategy class `EventHandler`, then eventHandler would  `doStrategy()`. Eventually, a new `EventObj` would be pushed to `eventQueue`, a queue designed for `Event Queue pattern`. 
 
 ```C++
 void PaddleToBall::doStrategy()

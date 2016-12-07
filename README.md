@@ -85,10 +85,8 @@ void PaddleToBall::doStrategy()
 
   eventObj* newEvent = new eventObj(SOUND, 0, NULL, contact);
   eventQueue.push_back(newEvent);
-  //thisLayer->playSound();
   b2WorldManifold* pos = new b2WorldManifold();
   contact->GetWorldManifold(pos);
-  //thisLayer->playSound();
   if (aid->at(0) != 'P')
   {
 
